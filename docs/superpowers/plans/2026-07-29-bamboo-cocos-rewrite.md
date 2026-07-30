@@ -1346,7 +1346,17 @@ import 追加:`CoinView`、`ScoreSystem`、`Storage`。类字段追加 `protecte
     };
 ```
 
-`update()` 末尾追加:`this.score.updateBest(this.state.heightPx);`
+`update()` 末尾追加(**注意限流**,`wx.setStorageSync` 是同步磁盘写,原型 localStorage 每帧写的做法在微信端不可照搬):
+
+```ts
+    // 最高分每秒至多写一次;内存 bestMeters 由 HUD 每帧读 state 高度刷新
+    if (this.state.t - this.lastBestCheck > 1) {
+      this.lastBestCheck = this.state.t;
+      this.score.updateBest(this.state.heightPx);
+    }
+```
+
+类字段同时追加 `private lastBestCheck = 0;`。
 
 - [ ] **Step 3: 单测回归 + Commit**
 

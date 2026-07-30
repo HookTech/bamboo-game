@@ -34,7 +34,8 @@
 
 ```
 输入 → InputAdapter → RhythmJudge(纯函数) → GameState(唯一事实源)
-  → 事件(onGrow/onStun/onComboBreak/onCoin) → 各 View / FX / HUD 订阅更新
+  → 事件(grow/stun/comboBreak/start)→ 各 View / FX / HUD 订阅更新
+金币拾取走 CoinView.onPickup 回调(不进 GameState 事件)
 ```
 
 ### 场景结构(单一主场景)

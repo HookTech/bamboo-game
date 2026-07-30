@@ -33,6 +33,7 @@ export class Bootstrap extends Component {
     this.cam.clearFlags = Camera.ClearFlag.SOLID_COLOR;
     this.cam.clearColor = new Color(88, 176, 240, 255);
     this.rig = camNode.addComponent(CameraRig);
+    this.rig.cam = this.cam;
 
     const bambooRoot = new Node('BambooRoot');
     this.node.scene!.addChild(bambooRoot);

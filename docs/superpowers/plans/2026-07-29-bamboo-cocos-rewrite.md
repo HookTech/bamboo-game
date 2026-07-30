@@ -1076,6 +1076,7 @@ export class BambooMesh extends Component {
 
 ```ts
     this.rig = camNode.addComponent(CameraRig);
+    this.rig.cam = this.cam;
 
     const bambooRoot = new Node('BambooRoot');
     this.node.scene!.addChild(bambooRoot);

@@ -1,6 +1,9 @@
 import { _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view, ResolutionPolicy } from 'cc';
 import { GameState } from './core/GameState';
 import { InputAdapter } from './platform/InputAdapter';
+import { CameraRig } from './view/CameraRig';
+import { BambooMesh } from './view/BambooMesh';
+import { GameConfig as C, px2m } from './core/GameConfig';
 
 const { ccclass } = _decorator;
 
@@ -9,6 +12,8 @@ const { ccclass } = _decorator;
 export class Bootstrap extends Component {
   protected state = new GameState();
   protected cam!: Camera;
+  protected rig!: CameraRig;
+  protected bamboo!: BambooMesh;
 
   start(): void {
     view.setDesignResolutionSize(800, 600, ResolutionPolicy.FIT_HEIGHT);
@@ -27,16 +32,26 @@ export class Bootstrap extends Component {
     this.cam.far = 300;
     this.cam.clearFlags = Camera.ClearFlag.SOLID_COLOR;
     this.cam.clearColor = new Color(88, 176, 240, 255);
-    camNode.setPosition(-1.28, 4.4, 22.4);
+    this.rig = camNode.addComponent(CameraRig);
+
+    const bambooRoot = new Node('BambooRoot');
+    this.node.scene!.addChild(bambooRoot);
+    bambooRoot.setPosition(px2m(C.BAMBOO_X_PX - C.DESIGN_W / 2), 0, 0);
+    this.bamboo = bambooRoot.addComponent(BambooMesh);
+    this.bamboo.state = this.state;
 
     new InputAdapter(() => {
       const r = this.state.press();
       if (r) console.log(`[press] combo=${r.combo} gain=${r.gainPx.toFixed(1)} stunned=${r.stunned}`);
       else console.log('[press] start/ignored');
     }).attach();
+
+    this.state.on('stun', () => this.rig.kick(14));
   }
 
   update(dt: number): void {
-    this.state.update(Math.min(dt, 0.05));
+    dt = Math.min(dt, 0.05);
+    this.state.update(dt);
+    this.rig.follow(this.state.heightPx, dt);
   }
 }

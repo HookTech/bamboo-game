@@ -1,2 +1,21 @@
 .DS_Store
 Thumbs.db
+
+# Cocos Creator local / generated
+cocos/library/
+cocos/temp/
+cocos/build/
+cocos/profiles/
+cocos/local/
+cocos/node_modules/
+
+# Accidental nested Creator project / editor caches
+cocos/NewProject/
+cocos/.creator/
+
+# Local agent / browser dumps (never commit)
+.playwright-mcp/
+.firecrawl/
+.superpowers/
+*.png
+!docs/**/*.png

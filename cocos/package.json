@@ -1,0 +1,19 @@
+{
+  "name": "bamboo-game",
+  "uuid": "b4b00000-5e9a-4c1d-8f00-ba6b00000001",
+  "version": "3.8.8",
+  "type": "3d",
+  "creator": {
+    "version": "3.8.8"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "~5.4.5"
+  }
+}

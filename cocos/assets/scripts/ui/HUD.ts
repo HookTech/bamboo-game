@@ -75,8 +75,8 @@ export class HUD extends Component {
     this.lCombo = this.makeLabel('', 16, rightX, 244, white, 'right');
     this.lDizzy = this.makeLabel('', 20, 0, 244, new Color(255, 120, 120, 230), 'center');
     this.lTitle = this.makeLabel('势如破竹', 44, 0, 48, white, 'center');
-    this.lOverlay = this.makeLabel('按 空格 / 点按屏幕 开始', 24, 0, -12, white, 'center');
-    this.makeLabel('节奏点按 0.1~0.5秒/次 · 太急眩晕 · 太慢断连击', 15, 0, -278, white, 'center');
+    this.lOverlay = this.makeLabel('点屏幕开始 · 点哪边竹往哪边弯', 22, 0, -12, white, 'center');
+    this.makeLabel('节奏点按 0.1~0.5秒/次 · 侧点弯竹 · 太急眩晕 · 空格只生长', 14, 0, -278, white, 'center');
 
     const barNode = new Node('ComboBar');
     barNode.layer = Layers.Enum.UI_2D;

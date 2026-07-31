@@ -15,6 +15,7 @@ import { HUD } from './ui/HUD';
 import { AudioFx } from './fx/AudioFx';
 import { ParticleFx } from './fx/ParticleFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
+import { BendController } from './core/BendController';
 
 const { ccclass } = _decorator;
 
@@ -33,6 +34,7 @@ export class Bootstrap extends Component {
   protected score!: ScoreSystem;
   private hud!: HUD;
   private audioFx = new AudioFx();
+  private bend = new BendController();
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
   private lastBestCheck = 0;
@@ -156,9 +158,10 @@ export class Bootstrap extends Component {
       this.hud.refresh(this.state, this.score);
     };
 
-    new InputAdapter(() => {
+    new InputAdapter((normX) => {
       const r = this.state.press();
-      if (r) console.log(`[press] combo=${r.combo} gain=${r.gainPx.toFixed(1)} stunned=${r.stunned}`);
+      if (r && !r.stunned) this.bend.impulse(normX);
+      if (r) console.log(`[press] combo=${r.combo} gain=${r.gainPx.toFixed(1)} stunned=${r.stunned} bend=${this.bend.offsetPx.toFixed(1)}`);
       else console.log('[press] start/ignored');
       this.hud.refresh(this.state, this.score);
     }).attach();
@@ -228,6 +231,8 @@ export class Bootstrap extends Component {
     if (!this.ready) return;
     dt = Math.min(dt, 0.05);
     this.state.update(dt);
+    this.bend.update(dt);
+    if (this.bamboo) this.bamboo.bendOffsetPx = this.bend.offsetPx;
     this.rig.follow(this.state.heightPx, dt);
     // 最高分每秒至多写一次;内存 bestMeters 由 HUD 每帧读 state 高度刷新
     if (this.state.t - this.lastBestCheck > 1) {

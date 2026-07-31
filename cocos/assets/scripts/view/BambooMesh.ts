@@ -1,6 +1,6 @@
 import { _decorator, Component, Node, MeshRenderer, Material, Mesh, Color, Vec3, utils, primitives, EffectAsset } from 'cc';
 import { GameConfig as C, px2m } from '../core/GameConfig';
-import { tipSwayPx } from '../core/Sway';
+import { tipSwayPx, composeTipSwayPx } from '../core/Sway';
 import { GameState } from '../core/GameState';
 
 const { ccclass } = _decorator;
@@ -10,6 +10,8 @@ const SEG_M = C.SEG_LEN_PX / C.PX_PER_M; // 0.92
 export class BambooMesh extends Component {
   state: GameState | null = null;
   swayPx = 0;
+  /** 由 Bootstrap 每帧写入 BendController.offsetPx */
+  bendOffsetPx = 0;
 
   private cyl: Mesh | null = null;
   private segs: Node[] = [];
@@ -58,7 +60,8 @@ export class BambooMesh extends Component {
   update(_dt: number): void {
     const s = this.state;
     if (!s || !this.matA || !this.matB || !this.matDizzy) return;
-    this.swayPx = tipSwayPx(s.t, s.heightPx, s.targetHeightPx, s.stunned);
+    const auto = tipSwayPx(s.t, s.heightPx, s.targetHeightPx, s.stunned);
+    this.swayPx = composeTipSwayPx(auto, this.bendOffsetPx);
     const h = s.heightPx;
     if (h < 4) {
       for (const seg of this.segs) seg.active = false;

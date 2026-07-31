@@ -1,4 +1,5 @@
-import { tipSwayPx } from '../assets/scripts/core/Sway';
+import { tipSwayPx, composeTipSwayPx } from '../assets/scripts/core/Sway';
+import { GameConfig as C } from '../assets/scripts/core/GameConfig';
 
 describe('tipSwayPx', () => {
   it('is 0 at t=0 with no growth pull', () => {
@@ -25,5 +26,16 @@ describe('tipSwayPx', () => {
     const dizzy = Math.abs(tipSwayPx(1.7, 300, 300, true));
     expect(dizzy).toBeLessThanOrEqual(44);
     expect(calm).toBeLessThanOrEqual(44);
+  });
+});
+
+describe('composeTipSwayPx', () => {
+  it('adds auto and bend', () => {
+    expect(composeTipSwayPx(10, 20)).toBe(30);
+  });
+
+  it('clamps to ±TOTAL_SWAY_MAX_PX', () => {
+    expect(composeTipSwayPx(C.SWAY_MAX_PX, C.BEND_MAX_PX)).toBe(C.TOTAL_SWAY_MAX_PX);
+    expect(composeTipSwayPx(-C.SWAY_MAX_PX, -C.BEND_MAX_PX)).toBe(-C.TOTAL_SWAY_MAX_PX);
   });
 });

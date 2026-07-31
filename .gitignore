@@ -11,6 +11,7 @@ cocos/node_modules/
 
 # Accidental nested Creator project / local preview dumps
 cocos/NewProject/
+cocos/.creator/
 .playwright-mcp/
 *.png
 !docs/**/*.png

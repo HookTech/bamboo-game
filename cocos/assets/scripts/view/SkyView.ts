@@ -120,22 +120,22 @@ export class SkyView extends Component {
         console.warn('[SkyView] models bundle missing — skip clouds', err);
         return;
       }
-      // 若编辑器路径不同,改成实际路径(见 Task 1 Step 3)
+      // GLB 子资源名为 cloud.prefab 时,按 Prefab 类型加载 sky/cloud 即可
       bundle.load('sky/cloud', Prefab, (e, prefab) => {
         if (!this.isValid || !this.cloudRoot?.isValid) return;
-        if (e || !prefab) {
-          // 有的工程 GLB 导入为场景/网格而非 Prefab —— 再试 load 任意
-          bundle.load('sky/cloud', (e2, asset) => {
-            if (!this.isValid || !this.cloudRoot?.isValid) return;
-            if (e2 || !asset) {
-              console.warn('[SkyView] cloud asset missing — skip clouds', e || e2);
-              return;
-            }
-            this.spawnCloudsFromAsset(asset);
-          });
+        if (!e && prefab) {
+          this.spawnCloudsFromPrefab(prefab);
           return;
         }
-        this.spawnCloudsFromPrefab(prefab);
+        // 兼容:无类型加载后再认 Prefab
+        bundle.load('sky/cloud', (e2, asset) => {
+          if (!this.isValid || !this.cloudRoot?.isValid) return;
+          if (e2 || !asset) {
+            console.warn('[SkyView] cloud asset missing — skip clouds', e || e2);
+            return;
+          }
+          this.spawnCloudsFromAsset(asset);
+        });
       });
     });
   }
@@ -160,6 +160,7 @@ export class SkyView extends Component {
     };
     for (let i = 0; i < 5; i++) mk(false, i); // far
     for (let i = 0; i < 4; i++) mk(true, i);  // near
+    console.log(`[SkyView] clouds ready: ${this.clouds.length}`);
   }
 
   private spawnCloudsFromAsset(asset: Prefab | Node | object): void {
@@ -167,7 +168,7 @@ export class SkyView extends Component {
       this.spawnCloudsFromPrefab(asset);
       return;
     }
-    console.warn('[SkyView] cloud asset is not a Prefab — skip (import GLB as Prefab in editor)');
+    console.warn('[SkyView] cloud asset is not a Prefab — expand cloud.glb and ensure cloud.prefab exists');
   }
 
   update(dt: number): void {

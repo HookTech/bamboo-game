@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view, ResolutionPolicy, resources, EffectAsset } from 'cc';
+import { _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view, ResolutionPolicy, resources, EffectAsset, Canvas } from 'cc';
 import { GameState } from './core/GameState';
 import { ScoreSystem } from './core/ScoreSystem';
 import { InputAdapter } from './platform/InputAdapter';
@@ -8,6 +8,7 @@ import { BambooMesh } from './view/BambooMesh';
 import { PandaView } from './view/PandaView';
 import { CoinView } from './view/CoinView';
 import { SkyView } from './view/SkyView';
+import { HUD } from './ui/HUD';
 import { GameConfig as C, px2m } from './core/GameConfig';
 
 const { ccclass } = _decorator;
@@ -21,6 +22,7 @@ export class Bootstrap extends Component {
   protected bamboo!: BambooMesh;
   protected panda!: PandaView;
   protected score!: ScoreSystem;
+  private hud!: HUD;
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
   private lastBestCheck = 0;
@@ -87,18 +89,35 @@ export class Bootstrap extends Component {
     coins.rig = this.rig;
     coins.panda = this.panda;
     coins.initMaterials(effect);
-    coins.onPickup = () => {
+
+    const canvasNode = new Node('Canvas');
+    this.node.scene!.addChild(canvasNode);
+    canvasNode.addComponent(Canvas);
+    this.hud = canvasNode.addComponent(HUD);
+    this.hud.build();
+    this.hud.refresh(this.state, this.score);
+
+    this.state.on('start', () => this.hud.showOverlay(false));
+    this.state.on('grow', () => this.hud.refresh(this.state, this.score));
+    this.state.on('stun', () => {
+      this.rig.kick(14);
+      this.hud.refresh(this.state, this.score);
+    });
+
+    coins.onPickup = (pos) => {
       const mult = this.score.pickup(this.state.combo);
       console.log(`[coin] +${mult} score=${this.score.score} coins=${this.score.coins}`);
+      this.hud.floatText(`+${mult}`, pos, this.cam);
+      this.hud.refresh(this.state, this.score);
     };
 
     new InputAdapter(() => {
       const r = this.state.press();
       if (r) console.log(`[press] combo=${r.combo} gain=${r.gainPx.toFixed(1)} stunned=${r.stunned}`);
       else console.log('[press] start/ignored');
+      this.hud.refresh(this.state, this.score);
     }).attach();
 
-    this.state.on('stun', () => this.rig.kick(14));
     this.ready = true;
   }
 
@@ -112,5 +131,6 @@ export class Bootstrap extends Component {
       this.lastBestCheck = this.state.t;
       this.score.updateBest(this.state.heightPx);
     }
+    this.hud.refresh(this.state, this.score);
   }
 }

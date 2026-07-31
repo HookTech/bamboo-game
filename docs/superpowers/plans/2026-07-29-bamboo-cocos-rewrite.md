@@ -1,4 +1,4 @@
-# 节节高 Cocos Creator 2.5D 重写 · 实施计划
+# 势如破竹 Cocos Creator 2.5D 重写 · 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

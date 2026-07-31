@@ -20,6 +20,7 @@ export class HUD extends Component {
   private lBest!: Label;
   private lCombo!: Label;
   private lDizzy!: Label;
+  private lTitle!: Label;
   private lOverlay!: Label;
   private bar!: Graphics;
   private floats: FloatLabel[] = [];
@@ -73,7 +74,8 @@ export class HUD extends Component {
     this.lBest = this.makeLabel('最高 0.0m', 15, leftX, 184, new Color(255, 255, 255, 166), 'left');
     this.lCombo = this.makeLabel('', 16, rightX, 244, white, 'right');
     this.lDizzy = this.makeLabel('', 20, 0, 244, new Color(255, 120, 120, 230), 'center');
-    this.lOverlay = this.makeLabel('按 空格 / 点按屏幕 开始', 28, 0, 0, white, 'center');
+    this.lTitle = this.makeLabel('势如破竹', 44, 0, 48, white, 'center');
+    this.lOverlay = this.makeLabel('按 空格 / 点按屏幕 开始', 24, 0, -12, white, 'center');
     this.makeLabel('节奏点按 0.1~0.5秒/次 · 太急眩晕 · 太慢断连击', 15, 0, -278, white, 'center');
 
     const barNode = new Node('ComboBar');
@@ -110,6 +112,7 @@ export class HUD extends Component {
   }
 
   showOverlay(show: boolean): void {
+    this.lTitle.node.active = show;
     this.lOverlay.node.active = show;
   }
 

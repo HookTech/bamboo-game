@@ -25,6 +25,15 @@ export const GameConfig = {
 
   SWAY_MAX_PX: 44,
 
+  /** 单次满偏点按冲量 (px)；实际增量 = normX * IMPULSE_PX */
+  IMPULSE_PX: 90,
+  /** 冲量项钳制 (px) */
+  BEND_MAX_PX: 140,
+  /** 冲量指数衰减时间常数 (s) */
+  BEND_TAU: 0.35,
+  /** auto + bend 合成后尖端总钳制 (px) */
+  TOTAL_SWAY_MAX_PX: 160,
+
   /** 相机与竹面距离:fov30 垂直 → 可视高 12m ↔ 600px @50px/m */
   CAMERA_DISTANCE_M: 22.4,
 } as const;

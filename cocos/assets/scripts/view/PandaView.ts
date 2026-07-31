@@ -15,7 +15,7 @@ export class PandaView extends Component {
 
   onLoad(): void {
     // 占位胶囊:半径 0.2m,圆柱段高 0.5m —— Task 16 换成小熊猫 GLB
-    const mesh = utils.createMesh(primitives.capsule(0.2, 0.5));
+    const mesh = utils.createMesh(primitives.capsule(0.2, 0.2, 0.5));
     this.body = this.node.addComponent(MeshRenderer);
     this.body.mesh = mesh;
   }

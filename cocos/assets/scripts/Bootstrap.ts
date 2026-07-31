@@ -7,6 +7,7 @@ import { CameraRig } from './view/CameraRig';
 import { BambooMesh } from './view/BambooMesh';
 import { PandaView } from './view/PandaView';
 import { CoinView } from './view/CoinView';
+import { SkyView } from './view/SkyView';
 import { GameConfig as C, px2m } from './core/GameConfig';
 
 const { ccclass } = _decorator;
@@ -38,7 +39,7 @@ export class Bootstrap extends Component {
   }
 
   private buildScene(effect: EffectAsset | null): void {
-    view.setDesignResolutionSize(800, 600, ResolutionPolicy.FIT_HEIGHT);
+    view.setDesignResolutionSize(800, 600, ResolutionPolicy.FIXED_HEIGHT);
 
     const lightNode = new Node('Sun');
     this.node.scene!.addChild(lightNode);
@@ -56,6 +57,12 @@ export class Bootstrap extends Component {
     this.cam.clearColor = new Color(88, 176, 240, 255);
     this.rig = camNode.addComponent(CameraRig);
     this.rig.cam = this.cam;
+
+    const skyNode = new Node('Sky');
+    this.node.scene!.addChild(skyNode);
+    const sky = skyNode.addComponent(SkyView);
+    sky.state = this.state;
+    sky.build(camNode, this.cam);
 
     const bambooRoot = new Node('BambooRoot');
     this.node.scene!.addChild(bambooRoot);

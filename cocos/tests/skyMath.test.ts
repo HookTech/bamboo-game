@@ -1,4 +1,4 @@
-import { nightK, cloudAlpha, nearCloudAllowedX } from '../assets/scripts/core/skyMath';
+import { nightK, cloudAlpha, nearCloudAllowedX, visibleHalfWidthM, sunLocalX } from '../assets/scripts/core/skyMath';
 import { GameConfig as C } from '../assets/scripts/core/GameConfig';
 
 describe('skyMath', () => {
@@ -20,5 +20,22 @@ describe('skyMath', () => {
     expect(nearCloudAllowedX(halfW * 0.1, halfW)).toBe(false);
     expect(nearCloudAllowedX(halfW * 0.5, halfW)).toBe(true);
     expect(nearCloudAllowedX(-halfW * 0.5, halfW)).toBe(true);
+  });
+
+  it('visibleHalfWidthM matches design 4:3 ≈ 8m', () => {
+    expect(visibleHalfWidthM(C.DESIGN_W / C.DESIGN_H)).toBeCloseTo(8, 0);
+  });
+
+  it('sunLocalX stays inside half-width and shrinks on portrait', () => {
+    const aWide = C.DESIGN_W / C.DESIGN_H;
+    const aTall = 9 / 16;
+    const xWide = sunLocalX(aWide);
+    const xTall = sunLocalX(aTall);
+    expect(xWide).toBeGreaterThan(0);
+    expect(xTall).toBeGreaterThan(0);
+    expect(xTall).toBeLessThan(xWide);
+    expect(xWide).toBeLessThan(visibleHalfWidthM(aWide));
+    expect(xTall).toBeLessThan(visibleHalfWidthM(aTall));
+    expect(xWide).toBeCloseTo(visibleHalfWidthM(aWide) * C.SUN_X_FRAC);
   });
 });

@@ -24,3 +24,17 @@ export function nearCloudAllowedX(x: number, halfW: number): boolean {
   if (halfW <= 1e-6) return false;
   return Math.abs(x) >= halfW * 0.35;
 }
+
+const FOV_DEG = 30;
+
+/** 相机局部可见半宽(m)：FOV 垂直 × aspect。 */
+export function visibleHalfWidthM(aspect: number): number {
+  const a = Math.max(aspect, 1e-6);
+  const visibleH = 2 * C.CAMERA_DISTANCE_M * Math.tan((FOV_DEG / 2) * Math.PI / 180);
+  return (visibleH * a) / 2;
+}
+
+/** 日月相机局部 X(m)，右侧为正。 */
+export function sunLocalX(aspect: number): number {
+  return visibleHalfWidthM(aspect) * C.SUN_X_FRAC;
+}

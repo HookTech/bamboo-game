@@ -3,7 +3,8 @@ import {
   utils, primitives, Camera, assetManager, Prefab, instantiate,
 } from 'cc';
 import { GameState } from '../core/GameState';
-import { nightK, cloudAlpha, nearCloudAllowedX } from '../core/skyMath';
+import { nightK, cloudAlpha, nearCloudAllowedX, sunLocalX } from '../core/skyMath';
+import { GameConfig as C } from '../core/GameConfig';
 
 const { ccclass } = _decorator;
 const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
@@ -41,6 +42,8 @@ export class SkyView extends Component {
   private clouds: DriftCloud[] = [];
   private cloudRoot: Node | null = null;
   private halfW = 18;
+  private cam: Camera | null = null;
+  private lastAspect = -1;
 
   build(parent: Node, cam: Camera): void {
     this.tex = new Texture2D();
@@ -87,7 +90,6 @@ export class SkyView extends Component {
     this.bodyMr = this.sunMoon.addComponent(MeshRenderer);
     this.bodyMr.mesh = utils.createMesh(primitives.sphere(1.4, { segments: 24 }));
     this.bodyMr.setMaterial(this.sunMat, 0);
-    this.sunMoon.setPosition(8, 5.5, -37);
 
     this.halo = new Node('Halo');
     this.sunMoon.addChild(this.halo);
@@ -102,8 +104,18 @@ export class SkyView extends Component {
     parent.addChild(this.cloudRoot);
     this.loadClouds();
 
-    void cam;
+    this.cam = cam;
+    this.layoutSun(true);
     this.lastK = -1;
+  }
+
+  /** 按相机 aspect 把日月放在可见半宽内侧；aspect 变化时重算。 */
+  private layoutSun(force = false): void {
+    if (!this.sunMoon) return;
+    const aspect = this.cam?.camera?.aspect ?? (C.DESIGN_W / C.DESIGN_H);
+    if (!force && Math.abs(aspect - this.lastAspect) <= 0.01) return;
+    this.lastAspect = aspect;
+    this.sunMoon.setPosition(sunLocalX(aspect), C.SUN_LOCAL_Y, C.SUN_LOCAL_Z);
   }
 
   private makeUnlitColor(c: Color, transparent: boolean): Material {
@@ -228,6 +240,7 @@ export class SkyView extends Component {
   update(dt: number): void {
     const s = this.state;
     if (!s) return;
+    this.layoutSun();
     const k = nightK(s.heightPx);
 
     if (Math.abs(k - this.lastK) > 0.01) {

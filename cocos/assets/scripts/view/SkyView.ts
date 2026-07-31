@@ -9,11 +9,14 @@ const { ccclass } = _decorator;
 const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 
+/** cloud.glb 内嵌 Prefab 子资源 UUID(meta @cde1c)——预览里比 bundle 路径更稳 */
+const CLOUD_PREFAB_UUID = '823761ca-f1ce-4191-aa8c-04ede3535433@cde1c';
+
 interface DriftCloud {
   node: Node;
   z: number;
   y: number;
-  speed: number;   // m/s along local x
+  speed: number;
   baseScale: number;
   near: boolean;
 }
@@ -34,10 +37,10 @@ export class SkyView extends Component {
   private moonHaloMat!: Material;
   private bodyMr!: MeshRenderer;
   private haloMr!: MeshRenderer;
-  private blend = 0; // 0=sun … 1=moon
+  private blend = 0;
   private clouds: DriftCloud[] = [];
   private cloudRoot: Node | null = null;
-  private halfW = 18; // camera-local approx half width at cloud depth
+  private halfW = 18;
 
   build(parent: Node, cam: Camera): void {
     this.tex = new Texture2D();
@@ -72,16 +75,16 @@ export class SkyView extends Component {
       this.stars.push(st);
     }
 
-    // 日月主体 + 光晕
-    this.sunMat = this.makeUnlit(new Color(255, 237, 176, 255), false);
-    this.moonMat = this.makeUnlit(new Color(244, 241, 222, 255), false);
-    this.sunHaloMat = this.makeUnlit(new Color(255, 220, 140, 90), true);
-    this.moonHaloMat = this.makeUnlit(new Color(220, 230, 255, 55), true);
+    // 日月:球体 + 径向渐变圆形光晕(避免方板灰框)
+    this.sunMat = this.makeUnlitColor(new Color(255, 220, 120, 255), false);
+    this.moonMat = this.makeUnlitColor(new Color(235, 240, 255, 255), false);
+    this.sunHaloMat = this.makeUnlitRadial([255, 210, 120]);
+    this.moonHaloMat = this.makeUnlitRadial([210, 220, 255]);
 
     this.sunMoon = new Node('SunMoon');
     parent.addChild(this.sunMoon);
     this.bodyMr = this.sunMoon.addComponent(MeshRenderer);
-    this.bodyMr.mesh = utils.createMesh(primitives.sphere(1.5, { segments: 20 }));
+    this.bodyMr.mesh = utils.createMesh(primitives.sphere(1.4, { segments: 24 }));
     this.bodyMr.setMaterial(this.sunMat, 0);
     this.sunMoon.setPosition(8, 5.5, -37);
 
@@ -91,8 +94,8 @@ export class SkyView extends Component {
     this.haloMr.mesh = utils.createMesh(primitives.plane({ width: 1, length: 1, widthSegments: 1, lengthSegments: 1 }));
     this.haloMr.setMaterial(this.sunHaloMat, 0);
     this.halo.eulerAngles = new Vec3(90, 0, 0);
-    this.halo.setScale(5.5, 1, 5.5);
-    this.halo.setPosition(0, 0, 0.05);
+    this.halo.setScale(6.5, 1, 6.5);
+    this.halo.setPosition(0, 0, 0.08);
 
     this.cloudRoot = new Node('CloudRoot');
     parent.addChild(this.cloudRoot);
@@ -102,7 +105,7 @@ export class SkyView extends Component {
     this.lastK = -1;
   }
 
-  private makeUnlit(c: Color, transparent: boolean): Material {
+  private makeUnlitColor(c: Color, transparent: boolean): Material {
     const m = new Material();
     m.initialize({
       effectName: 'builtin-unlit',
@@ -113,28 +116,80 @@ export class SkyView extends Component {
     return m;
   }
 
+  /** 圆形软光晕:中心不透明、边缘透明,消除方板感 */
+  private makeUnlitRadial(rgb: readonly [number, number, number]): Material {
+    const N = 64;
+    const data = new Uint8Array(N * N * 4);
+    const cx = (N - 1) / 2;
+    for (let y = 0; y < N; y++) {
+      for (let x = 0; x < N; x++) {
+        const dx = (x - cx) / cx;
+        const dy = (y - cx) / cx;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const a = d >= 1 ? 0 : Math.round(220 * (1 - d) * (1 - d));
+        const o = (y * N + x) * 4;
+        data[o] = rgb[0];
+        data[o + 1] = rgb[1];
+        data[o + 2] = rgb[2];
+        data[o + 3] = a;
+      }
+    }
+    const tex = new Texture2D();
+    tex.reset({ width: N, height: N, format: Texture2D.PixelFormat.RGBA8888 });
+    tex.setFilters(Texture2D.Filter.LINEAR, Texture2D.Filter.LINEAR);
+    tex.setMipFilter(Texture2D.Filter.NONE);
+    tex.setWrapMode(Texture2D.WrapMode.CLAMP_TO_EDGE, Texture2D.WrapMode.CLAMP_TO_EDGE);
+    tex.uploadData(data);
+
+    const m = new Material();
+    m.initialize({
+      effectName: 'builtin-unlit',
+      technique: 1,
+      defines: { USE_TEXTURE: true },
+    });
+    m.setProperty('mainTexture', tex);
+    return m;
+  }
+
   private loadClouds(): void {
+    // 1) UUID 直载(编辑器预览最稳)
+    assetManager.loadAny({ uuid: CLOUD_PREFAB_UUID }, (err, asset) => {
+      if (!this.isValid || !this.cloudRoot?.isValid) return;
+      if (!err && asset instanceof Prefab) {
+        console.log('[SkyView] cloud loaded via uuid');
+        this.spawnCloudsFromPrefab(asset);
+        return;
+      }
+      console.warn('[SkyView] uuid load failed, try models bundle', err);
+      this.loadCloudsFromBundle();
+    });
+  }
+
+  private loadCloudsFromBundle(): void {
     assetManager.loadBundle('models', (err, bundle) => {
       if (!this.isValid || !this.cloudRoot?.isValid) return;
       if (err || !bundle) {
         console.warn('[SkyView] models bundle missing — skip clouds', err);
         return;
       }
-      // GLB 子资源名为 cloud.prefab 时,按 Prefab 类型加载 sky/cloud 即可
       bundle.load('sky/cloud', Prefab, (e, prefab) => {
         if (!this.isValid || !this.cloudRoot?.isValid) return;
         if (!e && prefab) {
+          console.log('[SkyView] cloud loaded via bundle Prefab');
           this.spawnCloudsFromPrefab(prefab);
           return;
         }
-        // 兼容:无类型加载后再认 Prefab
         bundle.load('sky/cloud', (e2, asset) => {
           if (!this.isValid || !this.cloudRoot?.isValid) return;
           if (e2 || !asset) {
             console.warn('[SkyView] cloud asset missing — skip clouds', e || e2);
             return;
           }
-          this.spawnCloudsFromAsset(asset);
+          if (asset instanceof Prefab) {
+            this.spawnCloudsFromPrefab(asset);
+            return;
+          }
+          console.warn('[SkyView] cloud asset is not a Prefab', asset);
         });
       });
     });
@@ -142,33 +197,30 @@ export class SkyView extends Component {
 
   private spawnCloudsFromPrefab(prefab: Prefab): void {
     if (!this.isValid || !this.cloudRoot?.isValid) return;
+    // Prefab 内 Cloud1 已有 scale≈100,根节点再用 0.03~0.05 → 世界约 3~5m
     const mk = (near: boolean, i: number): void => {
       const node = instantiate(prefab);
       this.cloudRoot!.addChild(node);
       const side = i % 2 === 0 ? -1 : 1;
-      let x = side * (near ? 10 + (i % 3) * 2.5 : 6 + (i % 4) * 3);
+      let x = side * (near ? 9 + (i % 3) * 2.2 : 7 + (i % 4) * 2.8);
       if (near && !nearCloudAllowedX(x, this.halfW)) x = side * (this.halfW * 0.45 + (i % 2));
-      const y = near ? (-1 + (i % 3) * 2.2) : (2 + (i % 4) * 1.8);
-      const z = near ? -28 - (i % 3) : -34 - (i % 4);
-      const sc = near ? 1.2 + (i % 3) * 0.25 : 0.7 + (i % 3) * 0.15;
+      const y = near ? (0.5 + (i % 3) * 2.0) : (2.5 + (i % 4) * 1.6);
+      const z = near ? -26 - (i % 3) * 0.4 : -32 - (i % 4) * 0.5;
+      const sc = near ? 0.045 + (i % 3) * 0.008 : 0.028 + (i % 3) * 0.006;
       node.setPosition(x, y, z);
       node.setScale(sc, sc, sc);
       this.clouds.push({
-        node, z, y, speed: (near ? 0.35 : 0.18) * side * (i % 2 === 0 ? 1 : -1),
-        baseScale: sc, near,
+        node,
+        z,
+        y,
+        speed: (near ? 0.4 : 0.22) * side * (i % 2 === 0 ? 1 : -1),
+        baseScale: sc,
+        near,
       });
     };
-    for (let i = 0; i < 5; i++) mk(false, i); // far
-    for (let i = 0; i < 4; i++) mk(true, i);  // near
+    for (let i = 0; i < 5; i++) mk(false, i);
+    for (let i = 0; i < 4; i++) mk(true, i);
     console.log(`[SkyView] clouds ready: ${this.clouds.length}`);
-  }
-
-  private spawnCloudsFromAsset(asset: Prefab | Node | object): void {
-    if (asset instanceof Prefab) {
-      this.spawnCloudsFromPrefab(asset);
-      return;
-    }
-    console.warn('[SkyView] cloud asset is not a Prefab — expand cloud.glb and ensure cloud.prefab exists');
   }
 
   update(dt: number): void {
@@ -176,7 +228,6 @@ export class SkyView extends Component {
     if (!s) return;
     const k = nightK(s.heightPx);
 
-    // 渐变纹理
     if (Math.abs(k - this.lastK) > 0.01) {
       this.lastK = k;
       const top = [lerp(88, 30, k), lerp(176, 24, k), lerp(240, 70, k)];
@@ -193,30 +244,19 @@ export class SkyView extends Component {
       this.tex.uploadData(data);
     }
 
-    // 日月 ~0.3s 交叉:blend 平滑逼近目标,光晕尺寸/透明度随 blend 插值
     const target = k < 0.5 ? 0 : 1;
     this.blend = this.blend + (target - this.blend) * Math.min(1, dt / 0.3);
     this.bodyMr.setMaterial(this.blend < 0.5 ? this.sunMat : this.moonMat, 0);
     this.haloMr.setMaterial(this.blend < 0.5 ? this.sunHaloMat : this.moonHaloMat, 0);
-    const haloA = Math.round(lerp(90, 55, this.blend));
-    const haloRgb = this.blend < 0.5
-      ? [255, 220, 140] as const
-      : [220, 230, 255] as const;
-    (this.blend < 0.5 ? this.sunHaloMat : this.moonHaloMat).setProperty(
-      'mainColor',
-      new Color(haloRgb[0], haloRgb[1], haloRgb[2], haloA),
-    );
-    const hs = lerp(5.5, 4.2, this.blend);
+    const hs = lerp(6.5, 5.0, this.blend);
     this.halo.setScale(hs, 1, hs);
 
-    // 星星
     const alpha = clamp01((k - 0.25) * 1.5);
     for (let i = 0; i < this.stars.length; i++) {
       const tw = 0.5 + 0.5 * Math.sin(s.t * 2 + i);
       this.stars[i].active = alpha * tw > 0.05;
     }
 
-    // 云漂移 + 高度淡出(用 scale 近似;材质 alpha 依赖模型着色器,scale 更稳)
     const ca = cloudAlpha(k);
     const wrap = this.halfW + 4;
     for (const c of this.clouds) {
@@ -225,11 +265,10 @@ export class SkyView extends Component {
       if (x > wrap) x = -wrap;
       if (x < -wrap) x = wrap;
       if (c.near && !nearCloudAllowedX(x, this.halfW)) {
-        // 穿过中带时瞬移到另一侧外沿
         x = (x >= 0 ? 1 : -1) * this.halfW * 0.45;
       }
       c.node.setPosition(x, c.y, c.z);
-      const sc = c.baseScale * (0.35 + 0.65 * ca) * (c.near ? 1 : 0.85);
+      const sc = c.baseScale * (0.35 + 0.65 * ca);
       c.node.setScale(sc, sc, sc);
       c.node.active = ca > 0.05;
     }

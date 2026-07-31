@@ -36,6 +36,11 @@ export const GameConfig = {
 
   /** 相机与竹面距离:fov30 垂直 → 可视高 12m ↔ 600px @50px/m */
   CAMERA_DISTANCE_M: 22.4,
+
+  /** 日月相对可见半宽的水平比例(右侧为正) */
+  SUN_X_FRAC: 0.58,
+  SUN_LOCAL_Y: 5.5,
+  SUN_LOCAL_Z: -37,
 } as const;
 
 export const px2m = (px: number): number => px / GameConfig.PX_PER_M;

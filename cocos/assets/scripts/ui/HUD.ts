@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Label, Graphics, Color, Vec3, UITransform, Camera } from 'cc';
+import { _decorator, Component, Node, Label, Graphics, Color, Vec3, UITransform, Camera, Layers } from 'cc';
 import { GameConfig as C } from '../core/GameConfig';
 import { GameState } from '../core/GameState';
 import { ScoreSystem } from '../core/ScoreSystem';
@@ -21,6 +21,7 @@ export class HUD extends Component {
 
   private makeLabel(txt: string, size: number, x: number, y: number, color: Color): Label {
     const n = new Node(`lbl_${txt.slice(0, 6)}`);
+    n.layer = Layers.Enum.UI_2D;
     this.node.addChild(n);
     n.addComponent(UITransform);
     const l = n.addComponent(Label);
@@ -36,6 +37,7 @@ export class HUD extends Component {
 
   /** 在 Canvas 节点上构建(设计分辨率 800×600,中心原点) */
   build(): void {
+    this.node.layer = Layers.Enum.UI_2D;
     const ut = this.node.getComponent(UITransform) ?? this.node.addComponent(UITransform);
     ut.setContentSize(C.DESIGN_W, C.DESIGN_H);
 
@@ -50,6 +52,7 @@ export class HUD extends Component {
     this.makeLabel('节奏点按 0.1~0.5秒/次 · 太急眩晕 · 太慢断连击', 15, 0, -278, white);
 
     const barNode = new Node('ComboBar');
+    barNode.layer = Layers.Enum.UI_2D;
     this.node.addChild(barNode);
     barNode.addComponent(UITransform).setContentSize(C.DESIGN_W, C.DESIGN_H);
     this.bar = barNode.addComponent(Graphics);
@@ -86,6 +89,7 @@ export class HUD extends Component {
     let f = this.floats.find(fl => fl.life <= 0);
     if (!f) {
       const n = new Node('float');
+      n.layer = Layers.Enum.UI_2D;
       this.node.addChild(n);
       n.addComponent(UITransform);
       const label = n.addComponent(Label);

@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view, ResolutionPolicy, resources, EffectAsset, Canvas } from 'cc';
+import { _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view, ResolutionPolicy, resources, EffectAsset, Canvas, Layers } from 'cc';
 import { GameState } from './core/GameState';
 import { ScoreSystem } from './core/ScoreSystem';
 import { InputAdapter } from './platform/InputAdapter';
@@ -57,6 +57,8 @@ export class Bootstrap extends Component {
     this.cam.far = 300;
     this.cam.clearFlags = Camera.ClearFlag.SOLID_COLOR;
     this.cam.clearColor = new Color(88, 176, 240, 255);
+    // 3D 相机不要画 UI,否则 Canvas 会劫持透视相机 → 全屏糊成放大字体
+    this.cam.visibility = Layers.Enum.DEFAULT;
     this.rig = camNode.addComponent(CameraRig);
     this.rig.cam = this.cam;
 
@@ -90,9 +92,25 @@ export class Bootstrap extends Component {
     coins.panda = this.panda;
     coins.initMaterials(effect);
 
+    // 独立正交 UI 相机(只清深度,颜色留给 3D 相机)
+    const uiCamNode = new Node('UICamera');
+    this.node.scene!.addChild(uiCamNode);
+    const uiCam = uiCamNode.addComponent(Camera);
+    uiCam.projection = Camera.ProjectionType.ORTHO;
+    uiCam.orthoHeight = C.DESIGN_H / 2;
+    uiCam.near = 1;
+    uiCam.far = 2000;
+    uiCam.priority = 1;
+    uiCam.clearFlags = Camera.ClearFlag.DEPTH_ONLY;
+    uiCam.visibility = Layers.Enum.UI_2D;
+    uiCamNode.setPosition(0, 0, 1000);
+
     const canvasNode = new Node('Canvas');
     this.node.scene!.addChild(canvasNode);
-    canvasNode.addComponent(Canvas);
+    canvasNode.layer = Layers.Enum.UI_2D;
+    const canvas = canvasNode.addComponent(Canvas);
+    canvas.cameraComponent = uiCam;
+    canvas.alignCanvasWithScreen = true;
     this.hud = canvasNode.addComponent(HUD);
     this.hud.build();
     this.hud.refresh(this.state, this.score);

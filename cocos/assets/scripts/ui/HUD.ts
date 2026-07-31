@@ -1,4 +1,7 @@
-import { _decorator, Component, Node, Label, Graphics, Color, Vec3, UITransform, Camera, Layers } from 'cc';
+import {
+  _decorator, Component, Node, Label, Graphics, Color, Vec3, UITransform, Camera, Layers,
+  HorizontalTextAlignment,
+} from 'cc';
 import { GameConfig as C } from '../core/GameConfig';
 import { GameState } from '../core/GameState';
 import { ScoreSystem } from '../core/ScoreSystem';
@@ -6,6 +9,8 @@ import { ScoreSystem } from '../core/ScoreSystem';
 const { ccclass } = _decorator;
 
 interface FloatLabel { node: Node; label: Label; life: number; }
+
+type Align = 'left' | 'center' | 'right';
 
 @ccclass('HUD')
 export class HUD extends Component {
@@ -19,15 +24,31 @@ export class HUD extends Component {
   private bar!: Graphics;
   private floats: FloatLabel[] = [];
 
-  private makeLabel(txt: string, size: number, x: number, y: number, color: Color): Label {
+  private makeLabel(
+    txt: string,
+    size: number,
+    x: number,
+    y: number,
+    color: Color,
+    align: Align = 'center',
+  ): Label {
     const n = new Node(`lbl_${txt.slice(0, 6)}`);
     n.layer = Layers.Enum.UI_2D;
     this.node.addChild(n);
-    n.addComponent(UITransform);
+    const ut = n.addComponent(UITransform);
+    const ax = align === 'left' ? 0 : align === 'right' ? 1 : 0.5;
+    ut.setAnchorPoint(ax, 0.5);
+    ut.setContentSize(align === 'center' ? 520 : 300, size + 10);
     const l = n.addComponent(Label);
     l.string = txt;
     l.fontSize = size;
     l.color = color;
+    l.horizontalAlign = align === 'left'
+      ? HorizontalTextAlignment.LEFT
+      : align === 'right'
+        ? HorizontalTextAlignment.RIGHT
+        : HorizontalTextAlignment.CENTER;
+    l.overflow = Label.Overflow.NONE;
     l.enableOutline = true;
     l.outlineColor = new Color(0, 0, 0, 100);
     l.outlineWidth = 2;
@@ -41,15 +62,19 @@ export class HUD extends Component {
     const ut = this.node.getComponent(UITransform) ?? this.node.addComponent(UITransform);
     ut.setContentSize(C.DESIGN_W, C.DESIGN_H);
 
+    const pad = 24;
+    const leftX = -C.DESIGN_W / 2 + pad;
+    const rightX = C.DESIGN_W / 2 - pad;
     const white = new Color(255, 255, 255, 242);
-    this.lCoins = this.makeLabel('金币 0', 22, -370, 268, white);
-    this.lScore = this.makeLabel('分数 0', 22, -370, 238, white);
-    this.lHeight = this.makeLabel('高度 0.0m', 22, -370, 208, white);
-    this.lBest = this.makeLabel('最高 0.0m', 15, -370, 184, new Color(255, 255, 255, 166));
-    this.lCombo = this.makeLabel('', 16, 300, 244, white);
-    this.lDizzy = this.makeLabel('', 20, 0, 244, new Color(255, 120, 120, 230));
-    this.lOverlay = this.makeLabel('按 空格 / 点按屏幕 开始', 28, 0, 0, white);
-    this.makeLabel('节奏点按 0.1~0.5秒/次 · 太急眩晕 · 太慢断连击', 15, 0, -278, white);
+
+    this.lCoins = this.makeLabel('金币 0', 22, leftX, 268, white, 'left');
+    this.lScore = this.makeLabel('分数 0', 22, leftX, 238, white, 'left');
+    this.lHeight = this.makeLabel('高度 0.0m', 22, leftX, 208, white, 'left');
+    this.lBest = this.makeLabel('最高 0.0m', 15, leftX, 184, new Color(255, 255, 255, 166), 'left');
+    this.lCombo = this.makeLabel('', 16, rightX, 244, white, 'right');
+    this.lDizzy = this.makeLabel('', 20, 0, 244, new Color(255, 120, 120, 230), 'center');
+    this.lOverlay = this.makeLabel('按 空格 / 点按屏幕 开始', 28, 0, 0, white, 'center');
+    this.makeLabel('节奏点按 0.1~0.5秒/次 · 太急眩晕 · 太慢断连击', 15, 0, -278, white, 'center');
 
     const barNode = new Node('ComboBar');
     barNode.layer = Layers.Enum.UI_2D;
@@ -68,14 +93,18 @@ export class HUD extends Component {
 
     this.bar.clear();
     if (state.combo > 0) {
+      // 右上角连击条,与右对齐文案同侧
+      const barW = 160;
+      const barX = C.DESIGN_W / 2 - 24 - barW;
+      const barY = 262;
       this.bar.fillColor = new Color(0, 0, 0, 76);
-      this.bar.roundRect(210, 262, 160, 14, 7);
+      this.bar.roundRect(barX, barY, barW, 14, 7);
       this.bar.fill();
       const hue = ((45 + state.combo * 8) % 360) / 360;
       const barColor = new Color();
       barColor.fromHSV(hue, 0.9, 0.55 + state.combo * 0.008);
       this.bar.fillColor = barColor;
-      this.bar.roundRect(210, 262, 160 * (state.combo / C.COMBO_MAX), 14, 7);
+      this.bar.roundRect(barX, barY, barW * (state.combo / C.COMBO_MAX), 14, 7);
       this.bar.fill();
     }
   }

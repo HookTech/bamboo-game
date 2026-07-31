@@ -18,7 +18,8 @@
 
 ```
 bamboo-game/
-├── index.html / game.js / style.css / README.md   # 原型,保留不动
+├── prototype/         # Canvas 原型(index.html / game.js / style.css)
+├── README.md
 └── cocos/                                          # Cocos Creator 工程根
     ├── package.json / tsconfig.json / tsconfig.jest.json / jest.config.js
     ├── settings/v2/packages/project.json

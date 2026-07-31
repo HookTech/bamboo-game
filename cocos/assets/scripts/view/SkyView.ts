@@ -206,7 +206,8 @@ export class SkyView extends Component {
       if (near && !nearCloudAllowedX(x, this.halfW)) x = side * (this.halfW * 0.45 + (i % 2));
       const y = near ? (0.5 + (i % 3) * 2.0) : (2.5 + (i % 4) * 1.6);
       const z = near ? -26 - (i % 3) * 0.4 : -32 - (i % 4) * 0.5;
-      const sc = near ? 0.045 + (i % 3) * 0.008 : 0.028 + (i % 3) * 0.006;
+      // Prefab 内 Cloud1 scale≈100; 根节点 0.2 → 世界约 20m,侧视才像云不是苍蝇
+      const sc = near ? 0.22 + (i % 3) * 0.04 : 0.14 + (i % 3) * 0.03;
       node.setPosition(x, y, z);
       node.setScale(sc, sc, sc);
       this.clouds.push({

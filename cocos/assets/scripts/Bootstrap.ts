@@ -9,6 +9,7 @@ import { PandaView } from './view/PandaView';
 import { CoinView } from './view/CoinView';
 import { SkyView } from './view/SkyView';
 import { HUD } from './ui/HUD';
+import { AudioFx } from './fx/AudioFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
 
 const { ccclass } = _decorator;
@@ -23,6 +24,7 @@ export class Bootstrap extends Component {
   protected panda!: PandaView;
   protected score!: ScoreSystem;
   private hud!: HUD;
+  private audioFx = new AudioFx();
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
   private lastBestCheck = 0;
@@ -116,8 +118,12 @@ export class Bootstrap extends Component {
     this.hud.refresh(this.state, this.score);
 
     this.state.on('start', () => this.hud.showOverlay(false));
-    this.state.on('grow', () => this.hud.refresh(this.state, this.score));
+    this.state.on('grow', () => {
+      this.audioFx.press();
+      this.hud.refresh(this.state, this.score);
+    });
     this.state.on('stun', () => {
+      this.audioFx.bad();
       this.rig.kick(14);
       this.hud.refresh(this.state, this.score);
     });
@@ -125,6 +131,7 @@ export class Bootstrap extends Component {
     coins.onPickup = (pos) => {
       const mult = this.score.pickup(this.state.combo);
       console.log(`[coin] +${mult} score=${this.score.score} coins=${this.score.coins}`);
+      this.audioFx.coin(this.state.combo);
       this.hud.floatText(`+${mult}`, pos, this.cam);
       this.hud.refresh(this.state, this.score);
     };

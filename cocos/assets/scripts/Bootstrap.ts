@@ -156,7 +156,7 @@ export class Bootstrap extends Component {
       this.hud.refresh(this.state, this.score);
     };
 
-    new InputAdapter(() => {
+    new InputAdapter((_normX) => {
       const r = this.state.press();
       if (r) console.log(`[press] combo=${r.combo} gain=${r.gainPx.toFixed(1)} stunned=${r.stunned}`);
       else console.log('[press] start/ignored');

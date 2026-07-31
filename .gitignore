@@ -8,3 +8,9 @@ cocos/build/
 cocos/profiles/
 cocos/local/
 cocos/node_modules/
+
+# Accidental nested Creator project / local preview dumps
+cocos/NewProject/
+.playwright-mcp/
+*.png
+!docs/**/*.png

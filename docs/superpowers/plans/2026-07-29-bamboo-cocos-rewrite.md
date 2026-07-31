@@ -1023,7 +1023,7 @@ export class BambooMesh extends Component {
 
   private makeMat(c: Color): Material {
     const m = new Material();
-    m.initialize({ effectName: 'builtin-standard' });
+    m.initialize({ effectName: 'game-standard' });
     m.setProperty('mainColor', c);
     return m;
   }
@@ -1145,7 +1145,7 @@ export class PandaView extends Component {
     this.body = this.node.addComponent(MeshRenderer);
     this.body.mesh = mesh;
     const mat = new Material();
-    mat.initialize({ effectName: 'builtin-standard' });
+    mat.initialize({ effectName: 'game-standard' });
     mat.setProperty('mainColor', new Color(192, 84, 39)); // 原型 FUR #c05427
     this.body.setMaterial(mat, 0);
   }
@@ -1257,7 +1257,7 @@ export class CoinView extends Component {
   onLoad(): void {
     this.mesh = utils.createMesh(primitives.cylinder(0.14, 0.14, 0.05, { radialSegments: 16 }));
     this.mat = new Material();
-    this.mat.initialize({ effectName: 'builtin-standard' });
+    this.mat.initialize({ effectName: 'game-standard' });
     this.mat.setProperty('mainColor', new Color(255, 215, 110));
   }
 
@@ -1831,7 +1831,7 @@ export class ParticleFx extends Component {
 
   private makeMat(c: Color): Material {
     const m = new Material();
-    m.initialize({ effectName: 'builtin-standard' });
+    m.initialize({ effectName: 'game-standard' });
     m.setProperty('mainColor', c);
     return m;
   }

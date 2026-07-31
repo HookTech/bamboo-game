@@ -1,9 +1,11 @@
 {
   "name": "bamboo-game",
   "uuid": "b4b00000-5e9a-4c1d-8f00-ba6b00000001",
-  "version": "1.0.0",
+  "version": "3.8.8",
   "type": "3d",
-  "creator": { "version": "3.8.6" },
+  "creator": {
+    "version": "3.8.8"
+  },
   "scripts": {
     "test": "jest"
   },

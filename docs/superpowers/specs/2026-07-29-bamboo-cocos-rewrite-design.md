@@ -78,7 +78,7 @@ Main.scene
 
 1. **竹干程序化生成,不用现成模型**。无限生长 + 弯曲摆动是核心手感,现成模型无法做接缝和形变。运行时生成分段圆柱 + 竹节环,按原型二次弯曲公式偏移顶点。
 2. **模型资源用在角色与氛围**:小熊猫、竹叶、金币、地面植被/远山。
-3. **天空不用天空盒贴图**:程序化渐变(相机 ClearFlags = SOLID_COLOR + 渐变穹顶),省包体 ~800KB。
+3. **天空 = 程序化渐变底 + CC0 云 / 柔光日月**(详见 `2026-07-31-sky-cc0-props-design.md`)。不用天空盒贴图(相机 ClearFlags = SOLID_COLOR + 渐变穹顶),省包体 ~800KB。
 4. **音效继续程序化合成**(WebAudio 振荡器),零音频资源体积,五声音阶拾币音照搬。
 
 ## 包体策略(微信主包 4MB 硬限)
@@ -114,6 +114,7 @@ Main.scene
 | 竹叶/植被/远山 | [Kenney Nature Kit](https://kenney.nl/assets/nature-kit) | CC0 | |
 | 备选植物 | [poly.pizza](https://poly.pizza) 搜 bamboo / Quaternius 自然包 | CC0 | |
 | 金币 | 程序化圆环 或 Kenney | CC0 | |
+| 云 | Quaternius Cloud | CC0 | models/sky/cloud.glb |
 | 竹干 | 程序化生成 | — | |
 | 音效 | WebAudio 合成 | — | 照搬原型 |
 

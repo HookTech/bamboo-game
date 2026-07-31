@@ -115,15 +115,18 @@ export class SkyView extends Component {
 
   private loadClouds(): void {
     assetManager.loadBundle('models', (err, bundle) => {
+      if (!this.isValid || !this.cloudRoot?.isValid) return;
       if (err || !bundle) {
         console.warn('[SkyView] models bundle missing — skip clouds', err);
         return;
       }
       // 若编辑器路径不同,改成实际路径(见 Task 1 Step 3)
       bundle.load('sky/cloud', Prefab, (e, prefab) => {
+        if (!this.isValid || !this.cloudRoot?.isValid) return;
         if (e || !prefab) {
           // 有的工程 GLB 导入为场景/网格而非 Prefab —— 再试 load 任意
           bundle.load('sky/cloud', (e2, asset) => {
+            if (!this.isValid || !this.cloudRoot?.isValid) return;
             if (e2 || !asset) {
               console.warn('[SkyView] cloud asset missing — skip clouds', e || e2);
               return;
@@ -138,6 +141,7 @@ export class SkyView extends Component {
   }
 
   private spawnCloudsFromPrefab(prefab: Prefab): void {
+    if (!this.isValid || !this.cloudRoot?.isValid) return;
     const mk = (near: boolean, i: number): void => {
       const node = instantiate(prefab);
       this.cloudRoot!.addChild(node);

@@ -1,9 +1,15 @@
-import { _decorator, Component, MeshRenderer, Material, Color, Vec3, utils, primitives, EffectAsset } from 'cc';
+import {
+  _decorator, Component, MeshRenderer, Material, Color, Vec3, utils, primitives,
+  EffectAsset, assetManager, Prefab, instantiate, Node,
+} from 'cc';
 import { GameConfig as C, px2m } from '../core/GameConfig';
 import { GameState } from '../core/GameState';
 import { BambooMesh } from './BambooMesh';
 
 const { ccclass } = _decorator;
+
+/** panda.glb 内嵌 Prefab 子资源 UUID(meta @ad051)——预览里比 bundle 路径更稳 */
+const PANDA_PREFAB_UUID = '16b18872-b41f-441e-be11-00f42363f347@ad051';
 
 @ccclass('PandaView')
 export class PandaView extends Component {
@@ -12,12 +18,14 @@ export class PandaView extends Component {
   private flash = 0;
   private body!: MeshRenderer;
   private mat: Material | null = null;
+  private model: Node | null = null;
 
   onLoad(): void {
-    // 占位胶囊:半径 0.2m,圆柱段高 0.5m —— Task 16 换成小熊猫 GLB
+    // 占位胶囊:半径 0.2m,圆柱段高 0.5m —— GLB 失败时保留
     const mesh = utils.createMesh(primitives.capsule(0.2, 0.2, 0.5));
     this.body = this.node.addComponent(MeshRenderer);
     this.body.mesh = mesh;
+    this.loadModel();
   }
 
   /** Bootstrap 预载 effect 后注入,避免 effectName 查找 miss。 */
@@ -31,6 +39,46 @@ export class PandaView extends Component {
     mat.setProperty('mainColor', new Color(192, 84, 39)); // 原型 FUR #c05427
     this.mat = mat;
     this.body.setMaterial(mat, 0);
+  }
+
+  private loadModel(): void {
+    assetManager.loadAny({ uuid: PANDA_PREFAB_UUID }, (err, asset) => {
+      if (!this.isValid) return;
+      if (!err && asset instanceof Prefab) {
+        console.log('[PandaView] panda loaded via uuid');
+        this.applyModel(asset);
+        return;
+      }
+      console.warn('[PandaView] uuid load failed, try models bundle', err);
+      assetManager.loadBundle('models', (e2, bundle) => {
+        if (!this.isValid) return;
+        if (e2 || !bundle) {
+          console.warn('[PandaView] models bundle missing — keep capsule', e2);
+          return;
+        }
+        bundle.load('panda', Prefab, (e3, prefab) => {
+          if (!this.isValid) return;
+          if (e3 || !prefab) {
+            console.warn('[PandaView] panda Prefab missing — keep capsule', e3);
+            return;
+          }
+          console.log('[PandaView] panda loaded via bundle');
+          this.applyModel(prefab);
+        });
+      });
+    });
+  }
+
+  private applyModel(prefab: Prefab): void {
+    if (this.model?.isValid) this.model.destroy();
+    const model = instantiate(prefab);
+    this.node.addChild(model);
+    // Armature 已带 scale≈0.01(cm→m),根再 1 → 身高约 0.7~1m
+    model.setScale(1, 1, 1);
+    // glTF 默认朝 -Z;相机在 +Z 看过来 → 转 180° 让脸朝玩家(旋在子节点,不影响父节点眩晕晃动)
+    model.setRotationFromEuler(0, 180, 0);
+    this.model = model;
+    this.body.enabled = false;
   }
 
   attach(state: GameState): void {

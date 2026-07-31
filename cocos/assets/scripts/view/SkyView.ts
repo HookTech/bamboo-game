@@ -71,7 +71,8 @@ export class SkyView extends Component {
       smr.mesh = starMesh;
       smr.setMaterial(starMat, 0);
       st.eulerAngles = new Vec3(90, 0, 0);
-      st.setPosition(((i * 197.3) % 800) / 800 * 40 - 20, ((i * 89.7) % 420) / 600 * 12 - 2, -39);
+      // 每次进游戏随机撒点(范围与原先可视穹顶一致)
+      st.setPosition(Math.random() * 40 - 20, Math.random() * 14 - 2, -39);
       this.stars.push(st);
     }
 

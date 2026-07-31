@@ -1,4 +1,7 @@
-import { _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view, ResolutionPolicy, resources, EffectAsset, Canvas, Layers } from 'cc';
+import {
+  _decorator, Component, Node, Camera, DirectionalLight, Color, Vec3, view,
+  ResolutionPolicy, resources, EffectAsset, Canvas, Layers, assetManager, Prefab, instantiate,
+} from 'cc';
 import { GameState } from './core/GameState';
 import { ScoreSystem } from './core/ScoreSystem';
 import { InputAdapter } from './platform/InputAdapter';
@@ -10,9 +13,14 @@ import { CoinView } from './view/CoinView';
 import { SkyView } from './view/SkyView';
 import { HUD } from './ui/HUD';
 import { AudioFx } from './fx/AudioFx';
+import { ParticleFx } from './fx/ParticleFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
 
 const { ccclass } = _decorator;
+
+/** Kenney 植被 Prefab UUID(meta),预览比 bundle 路径更稳 */
+const TREE_PREFAB_UUID = '5d39d5d5-0cd9-4c57-be37-b943946e6492@f7340';
+const GRASS_PREFAB_UUID = '37d1b96d-7347-4bb7-9ba5-7ad22b2baca4@0a8bf';
 
 /** 运行时构建全部节点 —— 场景里只需一个挂本脚本的空节点。 */
 @ccclass('Bootstrap')
@@ -70,6 +78,8 @@ export class Bootstrap extends Component {
     sky.state = this.state;
     sky.build(camNode, this.cam);
 
+    this.spawnVegetation();
+
     const bambooRoot = new Node('BambooRoot');
     this.node.scene!.addChild(bambooRoot);
     bambooRoot.setPosition(px2m(C.BAMBOO_X_PX - C.DESIGN_W / 2), 0, 0);
@@ -93,6 +103,14 @@ export class Bootstrap extends Component {
     coins.rig = this.rig;
     coins.panda = this.panda;
     coins.initMaterials(effect);
+
+    const fxNode = new Node('FX');
+    this.node.scene!.addChild(fxNode);
+    const fx = fxNode.addComponent(ParticleFx);
+    fx.state = this.state;
+    fx.panda = this.panda;
+    fx.rig = this.rig;
+    fx.initMaterials(effect);
 
     // 独立正交 UI 相机(只清深度,颜色留给 3D 相机)
     const uiCamNode = new Node('UICamera');
@@ -120,6 +138,7 @@ export class Bootstrap extends Component {
     this.state.on('start', () => this.hud.showOverlay(false));
     this.state.on('grow', () => {
       this.audioFx.press();
+      fx.splashLeaves();
       this.hud.refresh(this.state, this.score);
     });
     this.state.on('stun', () => {
@@ -132,6 +151,7 @@ export class Bootstrap extends Component {
       const mult = this.score.pickup(this.state.combo);
       console.log(`[coin] +${mult} score=${this.score.score} coins=${this.score.coins}`);
       this.audioFx.coin(this.state.combo);
+      fx.burst(pos);
       this.hud.floatText(`+${mult}`, pos, this.cam);
       this.hud.refresh(this.state, this.score);
     };
@@ -144,6 +164,64 @@ export class Bootstrap extends Component {
     }).attach();
 
     this.ready = true;
+  }
+
+  /** 地面树/草地:缺失模型时静默跳过,不影响可玩。 */
+  private spawnVegetation(): void {
+    const bg = new Node('BgVegetation');
+    this.node.scene!.addChild(bg);
+
+    const placeTrees = (prefab: Prefab): void => {
+      if (!this.isValid || !bg.isValid) return;
+      for (let i = 0; i < 6; i++) {
+        const t = instantiate(prefab);
+        bg.addChild(t);
+        t.setPosition(-6 + i * 2.4, 0, -3 - (i % 3) * 2);
+        const sc = 0.8 + (i % 3) * 0.4;
+        t.setScale(sc, sc, sc);
+      }
+      console.log('[Bootstrap] trees ready: 6');
+    };
+
+    const placeGrass = (prefab: Prefab): void => {
+      if (!this.isValid || !bg.isValid) return;
+      for (let i = 0; i < 8; i++) {
+        const g = instantiate(prefab);
+        bg.addChild(g);
+        g.setPosition(-5 + (i % 4) * 2.8, 0, -1.5 - Math.floor(i / 4) * 2.2);
+        const sc = 2.2 + (i % 3) * 0.4;
+        g.setScale(sc, 1, sc);
+      }
+      console.log('[Bootstrap] grass ready: 8');
+    };
+
+    assetManager.loadAny({ uuid: TREE_PREFAB_UUID }, (err, asset) => {
+      if (!this.isValid) return;
+      if (!err && asset instanceof Prefab) {
+        placeTrees(asset);
+        return;
+      }
+      assetManager.loadBundle('models', (e2, bundle) => {
+        if (!this.isValid || e2 || !bundle) return;
+        bundle.load('tree_a', Prefab, (e3, prefab) => {
+          if (!e3 && prefab) placeTrees(prefab);
+        });
+      });
+    });
+
+    assetManager.loadAny({ uuid: GRASS_PREFAB_UUID }, (err, asset) => {
+      if (!this.isValid) return;
+      if (!err && asset instanceof Prefab) {
+        placeGrass(asset);
+        return;
+      }
+      assetManager.loadBundle('models', (e2, bundle) => {
+        if (!this.isValid || e2 || !bundle) return;
+        bundle.load('grass_a', Prefab, (e3, prefab) => {
+          if (!e3 && prefab) placeGrass(prefab);
+        });
+      });
+    });
   }
 
   update(dt: number): void {

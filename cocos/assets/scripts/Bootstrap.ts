@@ -16,6 +16,8 @@ import { AudioFx } from './fx/AudioFx';
 import { ParticleFx } from './fx/ParticleFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
 import { BendController } from './core/BendController';
+import { AnimalHazard } from './core/AnimalHazard';
+import { AnimalView } from './view/AnimalView';
 
 const { ccclass } = _decorator;
 
@@ -35,6 +37,8 @@ export class Bootstrap extends Component {
   private hud!: HUD;
   private audioFx = new AudioFx();
   private bend = new BendController();
+  private hazard = new AnimalHazard();
+  private animals!: AnimalView;
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
   private lastBestCheck = 0;
@@ -137,6 +141,25 @@ export class Bootstrap extends Component {
     this.hud.build();
     this.hud.refresh(this.state, this.score);
 
+    const animalNode = new Node('Animals');
+    this.node.scene!.addChild(animalNode);
+    this.animals = animalNode.addComponent(AnimalView);
+    this.animals.initMaterials(effect);
+    this.animals.bind(this.hazard);
+
+    this.hazard.on('knock', () => {
+      this.audioFx.animalKnock();
+    });
+    this.hazard.on('hit', (a) => {
+      this.state.applyExternalStun();
+      const lost = this.score.loseCoins(C.ANIMAL_COIN_LOSS);
+      console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins}`);
+      this.audioFx.coinDrop();
+      const p = this.panda.charPx;
+      fx.coinDrop(new Vec3(px2m(p.x), px2m(p.y), 0));
+      this.hud.refresh(this.state, this.score);
+    });
+
     this.state.on('start', () => this.hud.showOverlay(false));
     this.state.on('grow', () => {
       this.audioFx.press();
@@ -233,6 +256,21 @@ export class Bootstrap extends Component {
     this.state.update(dt);
     this.bend.update(dt);
     if (this.bamboo) this.bamboo.bendOffsetPx = this.bend.offsetPx;
+    const tipX = C.BAMBOO_X_PX - C.DESIGN_W / 2 + this.bend.offsetPx;
+    const tipY = this.state.heightPx;
+    const panda = this.panda.charPx;
+    this.hazard.update({
+      dt,
+      t: this.state.t,
+      started: this.state.started,
+      stunned: this.state.stunned,
+      coins: this.score.coins,
+      tipX,
+      tipY,
+      pandaX: panda.x,
+      pandaY: panda.y,
+      bendOffset: this.bend.offsetPx,
+    });
     this.rig.follow(this.state.heightPx, dt);
     // 最高分每秒至多写一次;内存 bestMeters 由 HUD 每帧读 state 高度刷新
     if (this.state.t - this.lastBestCheck > 1) {

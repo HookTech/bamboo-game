@@ -2,7 +2,7 @@ import { ANIMAL_TAUNTS, pickAnimalTaunt } from '../assets/scripts/core/AnimalTau
 
 describe('AnimalTaunts', () => {
   it('pool is non-empty', () => {
-    expect(ANIMAL_TAUNTS.length).toBeGreaterThan(5);
+    expect(ANIMAL_TAUNTS.length).toBeGreaterThan(20);
   });
 
   it('pickAnimalTaunt is deterministic with fixed rng', () => {

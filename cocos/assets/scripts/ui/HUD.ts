@@ -186,30 +186,45 @@ export class HUD extends Component {
     const n = new Node(`banter-${id}`);
     n.layer = Layers.Enum.UI_2D;
     this.node.addChild(n);
-    n.addComponent(UITransform);
+    const ut = n.addComponent(UITransform);
     const label = n.addComponent(Label);
     const fontSize = Math.round(22 * this.fontScale);
-    const ut = n.getComponent(UITransform)!;
-    ut.setContentSize(Math.min(this.uiW - 40, 480), fontSize + 18);
+    ut.setContentSize(Math.min(this.uiW - 40, 480), fontSize + 22);
+    ut.setAnchorPoint(0.5, 0.5);
     label.fontSize = fontSize;
-    label.color = new Color(255, 150, 160);
+    label.lineHeight = fontSize + 6;
+    label.color = new Color(255, 150, 160, 255);
     label.horizontalAlign = HorizontalTextAlignment.CENTER;
-    label.overflow = Label.Overflow.SHRINK;
+    label.overflow = Label.Overflow.NONE;
     label.enableOutline = true;
-    label.outlineColor = new Color(0, 0, 0, 160);
+    label.outlineColor = new Color(0, 0, 0, 200);
     label.outlineWidth = 3;
+    label.useSystemFont = true;
     label.string = txt;
+    // 先放中上方,等 sync 跟上胶囊(斜角出生换算常会飞出屏)
+    n.setPosition(0, 140, 0);
     n.active = true;
+    n.setSiblingIndex(this.node.children.length - 1);
     this.followBanters.set(id, { node: n, label });
   }
 
-  /** 台词贴在胶囊外侧旁(+ side * 偏移)。 */
+  /** 台词贴在胶囊外侧旁;UI 坐标钳进可见区,避免飞出屏。 */
   syncFollowBanter(id: number, worldPos: Vec3, cam: Camera, side: -1 | 1): void {
     const f = this.followBanters.get(id);
     if (!f || !f.node.isValid) return;
     const uiPos = cam.convertToUINode(worldPos, this.node);
-    const pad = 70 * this.fontScale;
-    f.node.setPosition(uiPos.x + side * pad, uiPos.y + 28, 0);
+    const pad = 80 * this.fontScale;
+    let x = uiPos.x + side * pad;
+    let y = uiPos.y + 36;
+    const halfW = this.uiW * 0.5 - 24;
+    const halfH = (view.getVisibleSize().height > 1 ? view.getVisibleSize().height : C.DESIGN_H) * 0.5 - 40;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      x = side * 120;
+      y = 140;
+    }
+    x = Math.max(-halfW, Math.min(halfW, x));
+    y = Math.max(-halfH + 80, Math.min(halfH - 20, y));
+    f.node.setPosition(x, y, 0);
     f.node.active = true;
   }
 

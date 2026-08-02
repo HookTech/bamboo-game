@@ -58,6 +58,13 @@ export class GameState {
     return r;
   }
 
+  /** 外部危害眩晕(动物撞击等):与过急眩晕同效果。 */
+  applyExternalStun(): void {
+    this.combo = 0;
+    this.stunUntil = this.t + C.STUN_DURATION;
+    this.emit('stun');
+  }
+
   update(dt: number): void {
     this.t += dt;
     const k = Math.min(1, dt * 3.2); // 原型缓动系数

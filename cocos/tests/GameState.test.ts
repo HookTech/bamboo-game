@@ -46,6 +46,22 @@ describe('GameState', () => {
     expect(s.stunned).toBe(false);
   });
 
+  it('applyExternalStun clears combo, sets stun window, emits stun', () => {
+    const s = makeStarted();
+    s.update(0.3); s.press();
+    s.update(0.3); s.press();
+    expect(s.combo).toBe(2);
+    let stunned = 0;
+    s.on('stun', () => stunned++);
+    s.applyExternalStun();
+    expect(stunned).toBe(1);
+    expect(s.combo).toBe(0);
+    expect(s.stunned).toBe(true);
+    expect(s.press()).toBeNull();
+    s.update(0.95);
+    expect(s.stunned).toBe(false);
+  });
+
   it('breaks combo on slow press and emits comboBreak', () => {
     const s = makeStarted();
     s.update(0.3); s.press(); s.update(0.3); s.press();

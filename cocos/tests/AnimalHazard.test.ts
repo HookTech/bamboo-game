@@ -155,4 +155,25 @@ describe('AnimalHazard combat', () => {
     h.update({ ...inp, dt: C.ANIMAL_KNOCK_DESPAWN_S + 0.01, stunned: false });
     expect(a.phase).toBe('gone');
   });
+
+  it('suppresses spawn during post-hit cooldown', () => {
+    // arm: rollGap→min → nextSpawnAt=8；hit 前用 coins:19 越过 gap 使 nextSpawnAt 已到期
+    // 这样冷却期内唯一挡 spawn 的是 postHitUntil
+    let i = 0;
+    const seq = [0.0, 0.0, 0.9, 0.0]; // arm gap; later: kind→bird; side→+1; next gap
+    const h = new AnimalHazard(() => seq[Math.min(i++, seq.length - 1)]);
+    h.update({ ...inp, t: 0, coins: 20 }); // arm, nextSpawnAt = 8
+    h.update({ ...inp, t: 8, coins: 19 }); // gap elapsed but tier0 — no spawn
+    mkAnimal(h, { xPx: 10, yPx: 180, side: 1, phase: 'dive' });
+    const hitT = 8.5;
+    h.update({ ...inp, t: hitT, coins: 19, tipX: 0, tipY: 200, pandaX: 0, pandaY: 174, bendOffset: 0 });
+    expect(h.aliveCount()).toBe(0);
+
+    // nextSpawnAt already elapsed; still inside postHitUntil = hitT + cooldown
+    h.update({ ...inp, t: hitT + C.ANIMAL_POST_HIT_COOLDOWN_S - 0.01, coins: 20 });
+    expect(h.aliveCount()).toBe(0);
+
+    h.update({ ...inp, t: hitT + C.ANIMAL_POST_HIT_COOLDOWN_S, coins: 20 });
+    expect(h.aliveCount()).toBe(1);
+  });
 });

@@ -160,6 +160,7 @@ export class AnimalHazard {
 
   update(inp: HazardInput): void {
     this.trySpawn(inp);
+    let hitThisFrame = false;
     for (const a of this.animals) {
       if (a.phase === 'gone') continue;
       if (a.phase === 'knock') {
@@ -171,6 +172,7 @@ export class AnimalHazard {
         continue;
       }
       if (a.phase === 'hit') continue;
+      if (hitThisFrame) continue;
       if (this.canKnock(a, inp)) {
         a.phase = 'knock';
         a.knockAge = 0;
@@ -183,6 +185,7 @@ export class AnimalHazard {
         this.emit('hit', a);
         this.emit('despawn', a);
         a.phase = 'gone';
+        hitThisFrame = true;
         continue;
       }
       this.integrate(a, inp);

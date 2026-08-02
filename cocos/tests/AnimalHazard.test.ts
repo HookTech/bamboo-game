@@ -132,6 +132,16 @@ describe('AnimalHazard combat', () => {
     expect(a.phase).toBe('gone'); // hit 后立即回收为 gone
   });
 
+  it('only one hit per frame when two animals in radius', () => {
+    const h = new AnimalHazard(() => 0);
+    mkAnimal(h, { id: 1, xPx: 10, yPx: 180, side: 1, phase: 'dive' });
+    mkAnimal(h, { id: 2, xPx: 15, yPx: 182, side: -1, phase: 'dive' });
+    let hits = 0;
+    h.on('hit', () => hits++);
+    h.update({ ...inp, tipX: 0, tipY: 200, pandaX: 0, pandaY: 174, bendOffset: 0 });
+    expect(hits).toBe(1);
+  });
+
   it('prefers knock over hit same frame', () => {
     const h = new AnimalHazard(() => 0);
     const a = mkAnimal(h, { xPx: 20, yPx: 180, side: 1, phase: 'dive' });

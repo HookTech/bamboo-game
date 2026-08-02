@@ -172,14 +172,35 @@ export class HUD extends Component {
     });
   }
 
-  /** 动物撞击压力台词:更大字号、更长停留、偏暖红色。 */
-  banterText(txt: string, worldPos: Vec3, cam: Camera): void {
-    this.spawnFloat(txt, worldPos, cam, {
-      fontSize: Math.round(22 * this.fontScale),
-      color: new Color(255, 140, 150),
-      life: 2.4,
-      width: 420,
-    });
+  /** 动物出现后的压力台词:固定屏幕中上方,避免 3D→UI 换算飞出屏外。 */
+  banterText(txt: string): void {
+    let f = this.floats.find(fl => fl.life <= 0);
+    if (!f) {
+      const n = new Node('banter');
+      n.layer = Layers.Enum.UI_2D;
+      this.node.addChild(n);
+      n.addComponent(UITransform);
+      const label = n.addComponent(Label);
+      label.enableOutline = true;
+      label.outlineColor = new Color(0, 0, 0, 160);
+      label.outlineWidth = 3;
+      f = { node: n, label, life: 0 };
+      this.floats.push(f);
+    }
+    const fontSize = Math.round(24 * this.fontScale);
+    const ut = f.node.getComponent(UITransform)!;
+    ut.setContentSize(Math.min(this.uiW - 40, 520), fontSize + 20);
+    f.label.fontSize = fontSize;
+    f.label.color = new Color(255, 150, 160);
+    f.label.horizontalAlign = HorizontalTextAlignment.CENTER;
+    f.label.overflow = Label.Overflow.SHRINK;
+    f.label.enableOutline = true;
+    f.label.outlineColor = new Color(0, 0, 0, 160);
+    f.label.outlineWidth = 3;
+    f.label.string = txt;
+    f.node.setPosition(0, 120, 0);
+    f.node.active = true;
+    f.life = 2.6;
   }
 
   private spawnFloat(

@@ -92,6 +92,7 @@ describe('AnimalHazard combat', () => {
       phase: 'dive' as const,
       age: 1,
       knockAge: 0,
+      taunted: false,
       ...over,
     };
     h.animals.push(a);
@@ -132,6 +133,25 @@ describe('AnimalHazard combat', () => {
     expect(a.phase).toBe('gone'); // hit 后立即回收为 gone
   });
 
+
+
+  it('emits taunt about 1s after appear', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { phase: 'fadeIn', age: 0, yPx: 300 });
+    let taunts = 0;
+    h.on('taunt', () => taunts++);
+    // 0.95s: not yet
+    h.update({ ...inp, dt: 0.95, t: 5, tipX: 200, tipY: 400, bendOffset: 0 });
+    expect(taunts).toBe(0);
+    expect(a.taunted).toBe(false);
+    // +0.1s → age 1.05 >= 1
+    h.update({ ...inp, dt: 0.1, t: 5.95, tipX: 200, tipY: 400, bendOffset: 0 });
+    expect(taunts).toBe(1);
+    expect(a.taunted).toBe(true);
+    // once only
+    h.update({ ...inp, dt: 0.2, t: 6.15, tipX: 200, tipY: 400, bendOffset: 0 });
+    expect(taunts).toBe(1);
+  });
 
   it('hits promptly when diving into panda radius', () => {
     const h = new AnimalHazard(() => 0);

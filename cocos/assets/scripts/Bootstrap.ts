@@ -151,16 +151,19 @@ export class Bootstrap extends Component {
     this.hazard.on('knock', () => {
       this.audioFx.animalKnock();
     });
+    this.hazard.on('taunt', (a) => {
+      const taunt = pickAnimalTaunt();
+      console.log(`[animal] taunt kind=${a.kind} text=${taunt}`);
+      // 固定屏幕中上方,避免世界坐标换算把字甩出可见区
+      this.hud.banterText(taunt);
+    });
     this.hazard.on('hit', (a) => {
       this.state.applyExternalStun();
       const lost = this.score.loseCoins(C.ANIMAL_COIN_LOSS);
-      const taunt = pickAnimalTaunt();
-      console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins} taunt=${taunt}`);
+      console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins}`);
       this.audioFx.coinDrop();
       const p = this.panda.charPx;
-      const wpos = new Vec3(px2m(p.x), px2m(p.y), 0);
-      fx.coinDrop(wpos);
-      this.hud.banterText(taunt, wpos, this.cam);
+      fx.coinDrop(new Vec3(px2m(p.x), px2m(p.y), 0));
       this.hud.refresh(this.state, this.score);
     });
 

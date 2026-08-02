@@ -2,7 +2,7 @@ import { GameConfig as C } from './GameConfig';
 
 export type AnimalKind = 'bird' | 'cat' | 'dog' | 'rabbit';
 export type AnimalPhase = 'fadeIn' | 'dive' | 'knock' | 'hit' | 'gone';
-export type AnimalEvent = 'spawn' | 'knock' | 'hit' | 'despawn';
+export type AnimalEvent = 'spawn' | 'knock' | 'hit' | 'despawn' | 'taunt';
 
 export interface Animal {
   id: number;
@@ -13,6 +13,7 @@ export interface Animal {
   phase: AnimalPhase;
   age: number;
   knockAge: number;
+  taunted: boolean;
 }
 
 export interface HazardInput {
@@ -112,6 +113,7 @@ export class AnimalHazard {
       phase: 'fadeIn',
       age: 0,
       knockAge: 0,
+      taunted: false,
     };
     this.animals.push(a);
     this.emit('spawn', a);
@@ -136,9 +138,18 @@ export class AnimalHazard {
     return this.dist(a.xPx, a.yPx, inp.pandaX, inp.pandaY) <= C.ANIMAL_HIT_RADIUS_PX;
   }
 
+  private maybeTaunt(a: Animal): void {
+    if (a.taunted) return;
+    if (a.phase !== 'fadeIn' && a.phase !== 'dive') return;
+    if (a.age < C.ANIMAL_TAUNT_DELAY_S) return;
+    a.taunted = true;
+    this.emit('taunt', a);
+  }
+
   private integrate(a: Animal, inp: HazardInput): void {
     if (inp.stunned) return;
     a.age += inp.dt;
+    this.maybeTaunt(a);
     if (a.phase === 'fadeIn') {
       if (a.age >= C.ANIMAL_FADE_IN_S) a.phase = 'dive';
       return;

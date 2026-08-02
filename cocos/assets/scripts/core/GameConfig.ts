@@ -64,6 +64,8 @@ export const GameConfig = {
   ANIMAL_COIN_LOSS: 5,
   ANIMAL_POST_HIT_COOLDOWN_S: 3,
   ANIMAL_KNOCK_DESPAWN_S: 0.8,
+  /** 胶囊出现后弹出压力台词的延迟 (s) */
+  ANIMAL_TAUNT_DELAY_S: 1,
 } as const;
 
 export const px2m = (px: number): number => px / GameConfig.PX_PER_M;

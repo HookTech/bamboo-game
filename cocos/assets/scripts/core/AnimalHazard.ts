@@ -118,8 +118,74 @@ export class AnimalHazard {
     this.nextSpawnAt = inp.t + this.rollGap(tier);
   }
 
+  private dist(ax: number, ay: number, bx: number, by: number): number {
+    const dx = ax - bx, dy = ay - by;
+    return Math.hypot(dx, dy);
+  }
+
+  private canKnock(a: Animal, inp: HazardInput): boolean {
+    if (a.phase !== 'fadeIn' && a.phase !== 'dive') return false;
+    if (this.dist(a.xPx, a.yPx, inp.tipX, inp.tipY) > C.ANIMAL_KNOCK_RADIUS_PX) return false;
+    if (Math.abs(inp.bendOffset) < C.ANIMAL_KNOCK_BEND_MIN_PX) return false;
+    const sign = inp.bendOffset > 0 ? 1 : inp.bendOffset < 0 ? -1 : 0;
+    return sign === a.side;
+  }
+
+  private canHit(a: Animal, inp: HazardInput): boolean {
+    if (a.phase !== 'fadeIn' && a.phase !== 'dive') return false;
+    return this.dist(a.xPx, a.yPx, inp.pandaX, inp.pandaY) <= C.ANIMAL_HIT_RADIUS_PX;
+  }
+
+  private integrate(a: Animal, inp: HazardInput): void {
+    if (inp.stunned) return;
+    a.age += inp.dt;
+    if (a.phase === 'fadeIn') {
+      if (a.age >= C.ANIMAL_FADE_IN_S) a.phase = 'dive';
+      return;
+    }
+    if (a.phase !== 'dive') return;
+    const tx = inp.pandaX + a.side * C.ANIMAL_SIDE_OFFSET_PX;
+    const ty = inp.pandaY;
+    const dx = tx - a.xPx, dy = ty - a.yPx;
+    const d = Math.hypot(dx, dy) || 1;
+    const step = C.ANIMAL_DIVE_SPEED_PX * inp.dt;
+    if (step >= d) {
+      a.xPx = tx;
+      a.yPx = ty;
+    } else {
+      a.xPx += (dx / d) * step;
+      a.yPx += (dy / d) * step;
+    }
+  }
+
   update(inp: HazardInput): void {
     this.trySpawn(inp);
-    // Task 5 填运动与判定
+    for (const a of this.animals) {
+      if (a.phase === 'gone') continue;
+      if (a.phase === 'knock') {
+        a.knockAge += inp.dt;
+        if (a.knockAge >= C.ANIMAL_KNOCK_DESPAWN_S) {
+          a.phase = 'gone';
+          this.emit('despawn', a);
+        }
+        continue;
+      }
+      if (a.phase === 'hit') continue;
+      if (this.canKnock(a, inp)) {
+        a.phase = 'knock';
+        a.knockAge = 0;
+        this.emit('knock', a);
+        continue;
+      }
+      if (this.canHit(a, inp)) {
+        a.phase = 'hit';
+        this.postHitUntil = inp.t + C.ANIMAL_POST_HIT_COOLDOWN_S;
+        this.emit('hit', a);
+        this.emit('despawn', a);
+        a.phase = 'gone';
+        continue;
+      }
+      this.integrate(a, inp);
+    }
   }
 }

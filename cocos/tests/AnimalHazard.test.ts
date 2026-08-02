@@ -1,4 +1,5 @@
 import {
+  Animal,
   AnimalHazard,
   animalTier,
   kindsForTier,
@@ -77,5 +78,81 @@ describe('AnimalHazard spawn', () => {
     expect(h.aliveCount()).toBe(1);
     h.update(baseInput({ t: 60, coins: 20, stunned: true }));
     expect(h.aliveCount()).toBe(1);
+  });
+});
+
+describe('AnimalHazard combat', () => {
+  function mkAnimal(h: AnimalHazard, over: Partial<Animal> = {}) {
+    const a = {
+      id: 1,
+      kind: 'bird' as const,
+      xPx: 55,
+      yPx: 200,
+      side: 1 as const,
+      phase: 'dive' as const,
+      age: 1,
+      knockAge: 0,
+      ...over,
+    };
+    h.animals.push(a);
+    return a;
+  }
+
+  // coins:19 → tier0，避免 trySpawn 干扰手工塞入的实体
+  const inp = {
+    dt: 0.05,
+    t: 5,
+    started: true,
+    stunned: false,
+    coins: 19,
+    tipX: 0,
+    tipY: 200,
+    pandaX: 0,
+    pandaY: 174,
+    bendOffset: 0,
+  };
+
+  it('knocks when tip in radius, bend strong and same side', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { xPx: 40, yPx: 200, side: 1, phase: 'dive' });
+    let knocked = 0;
+    h.on('knock', () => knocked++);
+    h.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60 });
+    expect(knocked).toBe(1);
+    expect(a.phase).toBe('knock');
+  });
+
+  it('hits panda when close without valid knock bend', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { xPx: 10, yPx: 180, side: 1, phase: 'dive' });
+    let hits = 0;
+    h.on('hit', () => hits++);
+    h.update({ ...inp, tipX: 0, tipY: 200, pandaX: 0, pandaY: 174, bendOffset: 0 });
+    expect(hits).toBe(1);
+    expect(a.phase).toBe('gone'); // hit 后立即回收为 gone
+  });
+
+  it('prefers knock over hit same frame', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { xPx: 20, yPx: 180, side: 1, phase: 'dive' });
+    let knock = 0, hits = 0;
+    h.on('knock', () => knock++);
+    h.on('hit', () => hits++);
+    h.update({ ...inp, tipX: 0, tipY: 180, pandaX: 0, pandaY: 174, bendOffset: 80 });
+    expect(knock).toBe(1);
+    expect(hits).toBe(0);
+    expect(a.phase).toBe('knock');
+  });
+
+  it('freezes motion while stunned and despawns after knock timer', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { xPx: 55, yPx: 300, side: 1, phase: 'dive', age: 1 });
+    const y0 = a.yPx;
+    h.update({ ...inp, stunned: true, dt: 0.2 });
+    expect(a.yPx).toBe(y0);
+    a.phase = 'knock';
+    a.knockAge = 0;
+    h.update({ ...inp, dt: C.ANIMAL_KNOCK_DESPAWN_S + 0.01, stunned: false });
+    expect(a.phase).toBe('gone');
   });
 });

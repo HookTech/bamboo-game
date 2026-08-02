@@ -1,8 +1,8 @@
 # 空中动物危害 · 轻度干扰设计
 
 日期: 2026-08-03  
-分支: 待开 `feature/sky-animal-hazard`  
-状态: 已确认（方案 1 · 独立 AnimalHazard）  
+分支: `feature/sky-animal-hazard`  
+状态: 实现中（方案 1 · 独立 AnimalHazard）  
 关联:
 
 - `docs/superpowers/specs/2026-07-29-bamboo-cocos-rewrite-design.md`

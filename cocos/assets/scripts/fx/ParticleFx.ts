@@ -89,6 +89,21 @@ export class ParticleFx extends Component {
     }
   }
 
+  /** 动物撞击掉币:金点主要向下喷。 */
+  coinDrop(worldPos: Vec3): void {
+    for (let i = 0; i < 10; i++) {
+      const p = this.obtain(this.dots, this.dotMesh, this.goldMat, 'drop');
+      const a = rand(-Math.PI * 0.7, -Math.PI * 0.3);
+      const sp = rand(50, 140);
+      p.vx = Math.cos(a) * sp;
+      p.vy = Math.sin(a) * sp;
+      p.life = p.max = rand(0.45, 0.9);
+      p.node.setPosition(worldPos);
+      const sc = rand(0.8, 1.5);
+      p.node.setScale(sc, sc, 1);
+    }
+  }
+
   /** 竹根溅叶(原型:每次生长 3 片) */
   splashLeaves(): void {
     const baseX = px2m(C.BAMBOO_X_PX - C.DESIGN_W / 2);

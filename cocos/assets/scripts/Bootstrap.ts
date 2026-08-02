@@ -148,14 +148,17 @@ export class Bootstrap extends Component {
     this.animals.initMaterials(effect);
     this.animals.bind(this.hazard);
 
-    this.hazard.on('knock', () => {
+    this.hazard.on('knock', (a) => {
       this.audioFx.animalKnock();
+      this.hud.endFollowBanter(a.id);
     });
     this.hazard.on('taunt', (a) => {
       const taunt = pickAnimalTaunt();
       console.log(`[animal] taunt kind=${a.kind} text=${taunt}`);
-      // 固定屏幕中上方,避免世界坐标换算把字甩出可见区
-      this.hud.banterText(taunt);
+      this.hud.startFollowBanter(a.id, taunt);
+    });
+    this.hazard.on('despawn', (a) => {
+      this.hud.endFollowBanter(a.id);
     });
     this.hazard.on('hit', (a) => {
       this.state.applyExternalStun();
@@ -163,7 +166,10 @@ export class Bootstrap extends Component {
       console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins}`);
       this.audioFx.coinDrop();
       const p = this.panda.charPx;
-      fx.coinDrop(new Vec3(px2m(p.x), px2m(p.y), 0));
+      const wpos = new Vec3(px2m(p.x), px2m(p.y), 0);
+      fx.coinDrop(wpos);
+      this.hud.ouchText(wpos, this.cam);
+      this.hud.endFollowBanter(a.id);
       this.hud.refresh(this.state, this.score);
     });
 
@@ -174,7 +180,8 @@ export class Bootstrap extends Component {
       this.hud.refresh(this.state, this.score);
     });
     this.state.on('stun', () => {
-      this.audioFx.bad();
+      if (this.state.stunReason === 'animal') this.audioFx.ouch();
+      else this.audioFx.bad();
       this.rig.kick(14);
       this.hud.refresh(this.state, this.score);
     });
@@ -278,6 +285,15 @@ export class Bootstrap extends Component {
       pandaY: panda.y,
       bendOffset: this.bend.offsetPx,
     });
+    for (const a of this.hazard.animals) {
+      if (a.phase === 'gone' || a.phase === 'knock') continue;
+      this.hud.syncFollowBanter(
+        a.id,
+        new Vec3(px2m(a.xPx), px2m(a.yPx), 0),
+        this.cam,
+        a.side,
+      );
+    }
     this.rig.follow(this.state.heightPx, dt);
     // 最高分每秒至多写一次;内存 bestMeters 由 HUD 每帧读 state 高度刷新
     if (this.state.t - this.lastBestCheck > 1) {

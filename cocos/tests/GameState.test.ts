@@ -41,6 +41,7 @@ describe('GameState', () => {
     expect(stunned).toBe(1);
     expect(s.combo).toBe(0);
     expect(s.stunned).toBe(true);
+    expect(s.stunReason).toBe('mash');
     expect(s.press()).toBeNull(); // ignored during stun
     s.update(0.95);
     expect(s.stunned).toBe(false);
@@ -57,6 +58,7 @@ describe('GameState', () => {
     expect(stunned).toBe(1);
     expect(s.combo).toBe(0);
     expect(s.stunned).toBe(true);
+    expect(s.stunReason).toBe('animal');
     expect(s.press()).toBeNull();
     s.update(0.95);
     expect(s.stunned).toBe(false);

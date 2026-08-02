@@ -9,6 +9,7 @@ import { ScoreSystem } from '../core/ScoreSystem';
 const { ccclass } = _decorator;
 
 interface FloatLabel { node: Node; label: Label; life: number; }
+interface FollowBanter { node: Node; label: Label; }
 
 type Align = 'left' | 'center' | 'right';
 
@@ -25,6 +26,7 @@ export class HUD extends Component {
   private lHint!: Label;
   private bar!: Graphics;
   private floats: FloatLabel[] = [];
+  private followBanters = new Map<number, FollowBanter>();
 
   private uiW = C.DESIGN_W;
   private lastUiW = -1;
@@ -118,7 +120,7 @@ export class HUD extends Component {
     this.applyLabel(this.lHeight, leftX, 208, 22 * s, Math.max(160, w * 0.55));
     this.applyLabel(this.lBest, leftX, 184, 15 * s, Math.max(140, w * 0.5));
     this.applyLabel(this.lCombo, rightX, 244, 16 * s, 200);
-    this.applyLabel(this.lDizzy, 0, 244, 20 * s, Math.min(360, w * 0.9));
+    this.applyLabel(this.lDizzy, 0, 244, 20 * s, Math.min(520, w * 0.95));
     this.applyLabel(this.lTitle, 0, 48, 44 * s, Math.min(520, w * 0.95));
     this.applyLabel(this.lOverlay, 0, -12, 22 * s, Math.min(520, w * 0.95));
     this.applyLabel(this.lHint, 0, -h / 2 + 22, 14 * s, Math.min(520, w * 0.95));
@@ -138,7 +140,13 @@ export class HUD extends Component {
     this.lHeight.string = `高度 ${(state.heightPx / C.PX_PER_M).toFixed(1)}m`;
     this.lBest.string = `最高 ${score.bestMeters.toFixed(1)}m`;
     this.lCombo.string = state.combo > 0 ? `连击 x${state.combo}` : '';
-    this.lDizzy.string = state.stunned ? '竹子晕了…歇一下' : '';
+    if (!state.stunned) {
+      this.lDizzy.string = '';
+    } else if (state.stunReason === 'animal') {
+      this.lDizzy.string = '啊';
+    } else {
+      this.lDizzy.string = '别卷了，钱赚不完的';
+    }
 
     this.bar.clear();
     if (state.combo > 0) {
@@ -172,35 +180,54 @@ export class HUD extends Component {
     });
   }
 
-  /** 动物出现后的压力台词:固定屏幕中上方,避免 3D→UI 换算飞出屏外。 */
-  banterText(txt: string): void {
-    let f = this.floats.find(fl => fl.life <= 0);
-    if (!f) {
-      const n = new Node('banter');
-      n.layer = Layers.Enum.UI_2D;
-      this.node.addChild(n);
-      n.addComponent(UITransform);
-      const label = n.addComponent(Label);
-      label.enableOutline = true;
-      label.outlineColor = new Color(0, 0, 0, 160);
-      label.outlineWidth = 3;
-      f = { node: n, label, life: 0 };
-      this.floats.push(f);
-    }
-    const fontSize = Math.round(24 * this.fontScale);
-    const ut = f.node.getComponent(UITransform)!;
-    ut.setContentSize(Math.min(this.uiW - 40, 520), fontSize + 20);
-    f.label.fontSize = fontSize;
-    f.label.color = new Color(255, 150, 160);
-    f.label.horizontalAlign = HorizontalTextAlignment.CENTER;
-    f.label.overflow = Label.Overflow.SHRINK;
-    f.label.enableOutline = true;
-    f.label.outlineColor = new Color(0, 0, 0, 160);
-    f.label.outlineWidth = 3;
-    f.label.string = txt;
-    f.node.setPosition(0, 120, 0);
+  /** 压力台词挂到动物 id,每帧 syncFollowBanter 跟在胶囊旁。 */
+  startFollowBanter(id: number, txt: string): void {
+    this.endFollowBanter(id);
+    const n = new Node(`banter-${id}`);
+    n.layer = Layers.Enum.UI_2D;
+    this.node.addChild(n);
+    n.addComponent(UITransform);
+    const label = n.addComponent(Label);
+    const fontSize = Math.round(22 * this.fontScale);
+    const ut = n.getComponent(UITransform)!;
+    ut.setContentSize(Math.min(this.uiW - 40, 480), fontSize + 18);
+    label.fontSize = fontSize;
+    label.color = new Color(255, 150, 160);
+    label.horizontalAlign = HorizontalTextAlignment.CENTER;
+    label.overflow = Label.Overflow.SHRINK;
+    label.enableOutline = true;
+    label.outlineColor = new Color(0, 0, 0, 160);
+    label.outlineWidth = 3;
+    label.string = txt;
+    n.active = true;
+    this.followBanters.set(id, { node: n, label });
+  }
+
+  /** 台词贴在胶囊外侧旁(+ side * 偏移)。 */
+  syncFollowBanter(id: number, worldPos: Vec3, cam: Camera, side: -1 | 1): void {
+    const f = this.followBanters.get(id);
+    if (!f || !f.node.isValid) return;
+    const uiPos = cam.convertToUINode(worldPos, this.node);
+    const pad = 70 * this.fontScale;
+    f.node.setPosition(uiPos.x + side * pad, uiPos.y + 28, 0);
     f.node.active = true;
-    f.life = 2.6;
+  }
+
+  endFollowBanter(id: number): void {
+    const f = this.followBanters.get(id);
+    if (!f) return;
+    if (f.node.isValid) f.node.destroy();
+    this.followBanters.delete(id);
+  }
+
+  /** 熊猫挨打浮字「啊」。 */
+  ouchText(worldPos: Vec3, cam: Camera): void {
+    this.spawnFloat('啊', worldPos, cam, {
+      fontSize: Math.round(36 * this.fontScale),
+      color: new Color(255, 90, 90),
+      life: 1.0,
+      width: 120,
+    });
   }
 
   private spawnFloat(

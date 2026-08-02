@@ -13,6 +13,8 @@ export class GameState {
   combo = 0;
   maxCombo = 0;
   stunUntil = 0;
+  /** mash=过急点按; animal=动物撞击 */
+  stunReason: 'mash' | 'animal' | null = null;
   private lastPressAt = -Infinity;
   private handlers = new Map<GameEvent, Handler[]>();
 
@@ -47,6 +49,7 @@ export class GameState {
     if (r.stunned) {
       this.combo = 0;
       this.stunUntil = this.t + C.STUN_DURATION;
+      this.stunReason = 'mash';
       this.emit('stun');
       return r;
     }
@@ -62,6 +65,7 @@ export class GameState {
   applyExternalStun(): void {
     this.combo = 0;
     this.stunUntil = this.t + C.STUN_DURATION;
+    this.stunReason = 'animal';
     this.emit('stun');
   }
 

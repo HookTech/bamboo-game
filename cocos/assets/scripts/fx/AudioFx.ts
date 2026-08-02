@@ -66,6 +66,12 @@ export class AudioFx {
     this.tone(180, 0.16, 'sine', 0.1, 0.04, -80);
   }
 
+  /** 熊猫被动物撞到。 */
+  ouch(): void {
+    this.tone(720, 0.11, 'square', 0.14, 0, -280);
+    this.tone(380, 0.18, 'sawtooth', 0.09, 0.03, -120);
+  }
+
   /** 撞飞动物。 */
   animalKnock(): void {
     this.tone(420, 0.1, 'square', 0.1, 0, -200);

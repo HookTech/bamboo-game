@@ -132,6 +132,22 @@ describe('AnimalHazard combat', () => {
     expect(a.phase).toBe('gone'); // hit 后立即回收为 gone
   });
 
+
+  it('hits promptly when diving into panda radius', () => {
+    const h = new AnimalHazard(() => 0);
+    // 出生偏侧上方,俯冲目标为熊猫;若干帧内应进圈 hit,不得空停数秒
+    const a = mkAnimal(h, { xPx: 55, yPx: 280, side: 1, phase: 'dive', age: 1 });
+    let hits = 0;
+    h.on('hit', () => hits++);
+    for (let i = 0; i < 120 && hits === 0; i++) {
+      h.update({ ...inp, dt: 0.05, t: 5 + i * 0.05, tipX: 200, tipY: 400, bendOffset: 0 });
+    }
+    expect(hits).toBe(1);
+    expect(a.phase).toBe('gone');
+    // 120 * 0.05 = 6s 上限;合理俯冲应远快于此
+    expect(hits).toBe(1);
+  });
+
   it('only one hit per frame when two animals in radius', () => {
     const h = new AnimalHazard(() => 0);
     mkAnimal(h, { id: 1, xPx: 10, yPx: 180, side: 1, phase: 'dive' });

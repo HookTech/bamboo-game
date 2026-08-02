@@ -144,7 +144,8 @@ export class AnimalHazard {
       return;
     }
     if (a.phase !== 'dive') return;
-    const tx = inp.pandaX + a.side * C.ANIMAL_SIDE_OFFSET_PX;
+    // 直扑熊猫锚点(side 仅用于撞飞朝向/出生偏置),避免停在 HIT_RADIUS 外空等
+    const tx = inp.pandaX;
     const ty = inp.pandaY;
     const dx = tx - a.xPx, dy = ty - a.yPx;
     const d = Math.hypot(dx, dy) || 1;
@@ -173,12 +174,14 @@ export class AnimalHazard {
       }
       if (a.phase === 'hit') continue;
       if (hitThisFrame) continue;
+      // 先撞飞判定(未移动),再积分运动,再撞击 —— 进圈当帧即可 hit
       if (this.canKnock(a, inp)) {
         a.phase = 'knock';
         a.knockAge = 0;
         this.emit('knock', a);
         continue;
       }
+      this.integrate(a, inp);
       if (this.canHit(a, inp)) {
         a.phase = 'hit';
         this.postHitUntil = inp.t + C.ANIMAL_POST_HIT_COOLDOWN_S;
@@ -186,9 +189,7 @@ export class AnimalHazard {
         this.emit('despawn', a);
         a.phase = 'gone';
         hitThisFrame = true;
-        continue;
       }
-      this.integrate(a, inp);
     }
   }
 }

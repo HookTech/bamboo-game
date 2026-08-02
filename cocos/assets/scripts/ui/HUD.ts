@@ -164,6 +164,30 @@ export class HUD extends Component {
 
   /** 世界坐标浮字(+N),经相机换算到 UI 空间 */
   floatText(txt: string, worldPos: Vec3, cam: Camera): void {
+    this.spawnFloat(txt, worldPos, cam, {
+      fontSize: Math.round(18 * this.fontScale),
+      color: new Color(255, 215, 110),
+      life: 1.1,
+      width: 200,
+    });
+  }
+
+  /** 动物撞击压力台词:更大字号、更长停留、偏暖红色。 */
+  banterText(txt: string, worldPos: Vec3, cam: Camera): void {
+    this.spawnFloat(txt, worldPos, cam, {
+      fontSize: Math.round(22 * this.fontScale),
+      color: new Color(255, 140, 150),
+      life: 2.4,
+      width: 420,
+    });
+  }
+
+  private spawnFloat(
+    txt: string,
+    worldPos: Vec3,
+    cam: Camera,
+    opt: { fontSize: number; color: Color; life: number; width: number },
+  ): void {
     let f = this.floats.find(fl => fl.life <= 0);
     if (!f) {
       const n = new Node('float');
@@ -171,16 +195,20 @@ export class HUD extends Component {
       this.node.addChild(n);
       n.addComponent(UITransform);
       const label = n.addComponent(Label);
-      label.fontSize = Math.round(18 * this.fontScale);
-      label.color = new Color(255, 215, 110);
       f = { node: n, label, life: 0 };
       this.floats.push(f);
     }
+    const ut = f.node.getComponent(UITransform)!;
+    ut.setContentSize(opt.width, opt.fontSize + 16);
+    f.label.fontSize = opt.fontSize;
+    f.label.color = opt.color;
+    f.label.horizontalAlign = HorizontalTextAlignment.CENTER;
+    f.label.overflow = Label.Overflow.SHRINK;
     const uiPos = cam.convertToUINode(worldPos, this.node);
-    f.node.setPosition(uiPos);
+    f.node.setPosition(uiPos.x, uiPos.y + 36, 0);
     f.label.string = txt;
     f.node.active = true;
-    f.life = 1.1;
+    f.life = opt.life;
   }
 
   update(dt: number): void {

@@ -17,6 +17,7 @@ import { ParticleFx } from './fx/ParticleFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
 import { BendController } from './core/BendController';
 import { AnimalHazard } from './core/AnimalHazard';
+import { pickAnimalTaunt } from './core/AnimalTaunts';
 import { AnimalView } from './view/AnimalView';
 
 const { ccclass } = _decorator;
@@ -153,10 +154,13 @@ export class Bootstrap extends Component {
     this.hazard.on('hit', (a) => {
       this.state.applyExternalStun();
       const lost = this.score.loseCoins(C.ANIMAL_COIN_LOSS);
-      console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins}`);
+      const taunt = pickAnimalTaunt();
+      console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins} taunt=${taunt}`);
       this.audioFx.coinDrop();
       const p = this.panda.charPx;
-      fx.coinDrop(new Vec3(px2m(p.x), px2m(p.y), 0));
+      const wpos = new Vec3(px2m(p.x), px2m(p.y), 0);
+      fx.coinDrop(wpos);
+      this.hud.banterText(taunt, wpos, this.cam);
       this.hud.refresh(this.state, this.score);
     });
 

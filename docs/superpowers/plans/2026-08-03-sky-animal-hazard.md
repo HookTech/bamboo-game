@@ -579,8 +579,6 @@ describe('AnimalHazard combat', () => {
 });
 ```
 
-> 上面 combat 块里若仍留有旧的 `const inp = { ..., coins: 30 }`，删掉，只保留 `coins: 19` 那份。
-
 - [ ] **Step 2: 跑测确认失败**
 
 Run: `cd cocos && npx jest tests/AnimalHazard.test.ts -v`

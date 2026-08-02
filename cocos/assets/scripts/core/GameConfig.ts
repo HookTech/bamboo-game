@@ -55,7 +55,9 @@ export const GameConfig = {
   ANIMAL_MAX_ALIVE_T1_T2: 1,
   ANIMAL_MAX_ALIVE_T3: 2,
   ANIMAL_FADE_IN_S: 0.6,
-  ANIMAL_SPAWN_HEIGHT_PX: 180,
+  ANIMAL_SPAWN_HEIGHT_PX: 160,
+  /** 出生点相对熊猫的水平对角偏置(斜左右角) */
+  ANIMAL_SPAWN_DIAG_X_PX: 240,
   ANIMAL_SIDE_OFFSET_PX: 55,
   ANIMAL_DIVE_SPEED_PX: 90,
   ANIMAL_HIT_RADIUS_PX: 72,
@@ -64,8 +66,6 @@ export const GameConfig = {
   ANIMAL_COIN_LOSS: 5,
   ANIMAL_POST_HIT_COOLDOWN_S: 3,
   ANIMAL_KNOCK_DESPAWN_S: 0.8,
-  /** 胶囊出现后弹出压力台词的延迟 (s) */
-  ANIMAL_TAUNT_DELAY_S: 1,
 } as const;
 
 export const px2m = (px: number): number => px / GameConfig.PX_PER_M;

@@ -108,8 +108,9 @@ export class AnimalHazard {
       id: this.nextId++,
       kind,
       side,
-      xPx: inp.tipX + side * C.ANIMAL_SIDE_OFFSET_PX,
-      yPx: inp.tipY + C.ANIMAL_SPAWN_HEIGHT_PX,
+      // 斜左右上角出生 → 俯冲向熊猫
+      xPx: inp.pandaX + side * C.ANIMAL_SPAWN_DIAG_X_PX,
+      yPx: inp.pandaY + C.ANIMAL_SPAWN_HEIGHT_PX,
       phase: 'fadeIn',
       age: 0,
       knockAge: 0,
@@ -117,6 +118,8 @@ export class AnimalHazard {
     };
     this.animals.push(a);
     this.emit('spawn', a);
+    a.taunted = true;
+    this.emit('taunt', a);
     this.nextSpawnAt = inp.t + this.rollGap(tier);
   }
 
@@ -138,18 +141,9 @@ export class AnimalHazard {
     return this.dist(a.xPx, a.yPx, inp.pandaX, inp.pandaY) <= C.ANIMAL_HIT_RADIUS_PX;
   }
 
-  private maybeTaunt(a: Animal): void {
-    if (a.taunted) return;
-    if (a.phase !== 'fadeIn' && a.phase !== 'dive') return;
-    if (a.age < C.ANIMAL_TAUNT_DELAY_S) return;
-    a.taunted = true;
-    this.emit('taunt', a);
-  }
-
   private integrate(a: Animal, inp: HazardInput): void {
     if (inp.stunned) return;
     a.age += inp.dt;
-    this.maybeTaunt(a);
     if (a.phase === 'fadeIn') {
       if (a.age >= C.ANIMAL_FADE_IN_S) a.phase = 'dive';
       return;

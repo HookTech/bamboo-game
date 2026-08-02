@@ -52,6 +52,23 @@ describe('AnimalHazard spawn', () => {
     expect(h.aliveCount()).toBe(0);
   });
 
+
+  it('emits taunt immediately on spawn from diagonal corner', () => {
+    let i = 0;
+    const seq = [0.0, 0.0, 0.9, 0.0]; // gap; kind bird; side +1; next gap
+    const h = new AnimalHazard(() => seq[Math.min(i++, seq.length - 1)]);
+    let taunts = 0;
+    h.on('taunt', () => taunts++);
+    h.update(baseInput({ t: 0, coins: 20, pandaX: 10, pandaY: 100 }));
+    h.update(baseInput({ t: 20, coins: 20, pandaX: 10, pandaY: 100 }));
+    expect(taunts).toBe(1);
+    const a = h.animals.find((x) => x.phase !== 'gone')!;
+    expect(a.taunted).toBe(true);
+    expect(a.side).toBe(1);
+    expect(a.xPx).toBe(10 + C.ANIMAL_SPAWN_DIAG_X_PX);
+    expect(a.yPx).toBe(100 + C.ANIMAL_SPAWN_HEIGHT_PX);
+  });
+
   it('spawns when gap elapsed and under maxAlive', () => {
     // t=0 arm: rollGap uses rng#0
     // t=20 spawn: kind rng#1, side rng#2, next gap rng#3
@@ -135,23 +152,6 @@ describe('AnimalHazard combat', () => {
 
 
 
-  it('emits taunt about 1s after appear', () => {
-    const h = new AnimalHazard(() => 0);
-    const a = mkAnimal(h, { phase: 'fadeIn', age: 0, yPx: 300 });
-    let taunts = 0;
-    h.on('taunt', () => taunts++);
-    // 0.95s: not yet
-    h.update({ ...inp, dt: 0.95, t: 5, tipX: 200, tipY: 400, bendOffset: 0 });
-    expect(taunts).toBe(0);
-    expect(a.taunted).toBe(false);
-    // +0.1s → age 1.05 >= 1
-    h.update({ ...inp, dt: 0.1, t: 5.95, tipX: 200, tipY: 400, bendOffset: 0 });
-    expect(taunts).toBe(1);
-    expect(a.taunted).toBe(true);
-    // once only
-    h.update({ ...inp, dt: 0.2, t: 6.15, tipX: 200, tipY: 400, bendOffset: 0 });
-    expect(taunts).toBe(1);
-  });
 
   it('hits promptly when diving into panda radius', () => {
     const h = new AnimalHazard(() => 0);

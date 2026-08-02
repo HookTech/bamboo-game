@@ -19,3 +19,4 @@ cocos/.creator/
 .superpowers/
 *.png
 !docs/**/*.png
+docs/research/monument-valley-implementation-report.md

@@ -25,14 +25,23 @@ export const GameConfig = {
 
   SWAY_MAX_PX: 44,
 
-  /** 单次满偏点按冲量 (px)；实际增量 = normX * IMPULSE_PX */
-  IMPULSE_PX: 90,
-  /** 冲量项钳制 (px) */
-  BEND_MAX_PX: 140,
+  /** 弯竹上限相对可见半宽的比例（1.0 ≈ 贴左右屏边） */
+  BEND_HALF_W_FRAC: 1,
+  /** 单次满偏冲量相对 bendMax 的比例 */
+  IMPULSE_BEND_FRAC: 0.45,
   /** 冲量指数衰减时间常数 (s) */
   BEND_TAU: 0.35,
-  /** auto + bend 合成后尖端总钳制 (px) */
-  TOTAL_SWAY_MAX_PX: 160,
+
+  /** 金币边距相对半宽；下限见 COIN_MARGIN_MIN_PX */
+  COIN_MARGIN_FRAC: 0.15,
+  COIN_MARGIN_MIN_PX: 24,
+  /** 窄屏刷点半宽保底 */
+  COIN_SPAWN_HALF_MIN_PX: 40,
+
+  /** 设计半宽(400)下的参考值；运行时用 layoutMath.*(visibleWidth/2) */
+  IMPULSE_PX: 180,
+  BEND_MAX_PX: 400,
+  TOTAL_SWAY_MAX_PX: 444,
 
   /** 相机与竹面距离:fov30 垂直 → 可视高 12m ↔ 600px @50px/m */
   CAMERA_DISTANCE_M: 22.4,

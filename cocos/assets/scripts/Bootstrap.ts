@@ -16,6 +16,7 @@ import { AudioFx } from './fx/AudioFx';
 import { ParticleFx } from './fx/ParticleFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
 import { BendController } from './core/BendController';
+import { totalSwayMaxPx } from './core/layoutMath';
 import { AnimalHazard } from './core/AnimalHazard';
 import { pickAnimalTaunt } from './core/AnimalTaunts';
 import { AnimalView } from './view/AnimalView';
@@ -268,8 +269,13 @@ export class Bootstrap extends Component {
     if (!this.ready) return;
     dt = Math.min(dt, 0.05);
     this.state.update(dt);
+    const halfW = this.rig.visibleWidthPx() / 2;
+    this.bend.setHalfW(halfW);
     this.bend.update(dt);
-    if (this.bamboo) this.bamboo.bendOffsetPx = this.bend.offsetPx;
+    if (this.bamboo) {
+      this.bamboo.bendOffsetPx = this.bend.offsetPx;
+      this.bamboo.totalSwayMaxPx = totalSwayMaxPx(halfW);
+    }
     const tipX = C.BAMBOO_X_PX - C.DESIGN_W / 2 + this.bend.offsetPx;
     const tipY = this.state.heightPx;
     const panda = this.panda.charPx;

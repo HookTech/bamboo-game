@@ -11,7 +11,11 @@ export function tipSwayPx(tSec: number, heightPx: number, targetHeightPx: number
   return clamp(Math.sin(tSec * 1.6) * baseAmp + growPull + dizzyWob, -C.SWAY_MAX_PX, C.SWAY_MAX_PX);
 }
 
-/** 自动晃动 + 触屏冲量 → 尖端总偏移。 */
-export function composeTipSwayPx(autoPx: number, bendOffsetPx: number): number {
-  return clamp(autoPx + bendOffsetPx, -C.TOTAL_SWAY_MAX_PX, C.TOTAL_SWAY_MAX_PX);
+/** 自动晃动 + 触屏冲量 → 尖端总偏移；totalMax 默认设计参考值。 */
+export function composeTipSwayPx(
+  autoPx: number,
+  bendOffsetPx: number,
+  totalMaxPx: number = C.TOTAL_SWAY_MAX_PX,
+): number {
+  return clamp(autoPx + bendOffsetPx, -totalMaxPx, totalMaxPx);
 }

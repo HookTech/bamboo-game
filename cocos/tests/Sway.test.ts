@@ -34,8 +34,13 @@ describe('composeTipSwayPx', () => {
     expect(composeTipSwayPx(10, 20)).toBe(30);
   });
 
-  it('clamps to ±TOTAL_SWAY_MAX_PX', () => {
+  it('clamps to ±TOTAL_SWAY_MAX_PX by default', () => {
     expect(composeTipSwayPx(C.SWAY_MAX_PX, C.BEND_MAX_PX)).toBe(C.TOTAL_SWAY_MAX_PX);
     expect(composeTipSwayPx(-C.SWAY_MAX_PX, -C.BEND_MAX_PX)).toBe(-C.TOTAL_SWAY_MAX_PX);
+  });
+
+  it('accepts dynamic totalMax', () => {
+    expect(composeTipSwayPx(100, 100, 150)).toBe(150);
+    expect(composeTipSwayPx(-100, -100, 80)).toBe(-80);
   });
 });

@@ -1,5 +1,6 @@
 import { _decorator, Component, Node, MeshRenderer, Material, Mesh, Color, Vec3, utils, primitives, EffectAsset } from 'cc';
 import { GameConfig as C, px2m } from '../core/GameConfig';
+import { coinBounceHalfW, coinSpawnHalfW } from '../core/layoutMath';
 import { GameState } from '../core/GameState';
 import { CameraRig } from './CameraRig';
 import { PandaView } from './PandaView';
@@ -68,9 +69,9 @@ export class CoinView extends Component {
     // 生成:天上始终有货(原型 0.7s / 上限 30)
     if (s.t - this.lastSpawn > C.COIN_SPAWN_INTERVAL && this.pool.filter(c => c.alive).length < C.COIN_MAX_ALIVE) {
       this.lastSpawn = s.t;
+      const halfW = rig.visibleWidthPx() / 2;
       const c = this.obtain();
-      const halfW = rig.visibleWidthPx() / 2 - 60;
-      c.xPx = rand(-halfW, halfW);
+      c.xPx = rand(-coinSpawnHalfW(halfW), coinSpawnHalfW(halfW));
       c.yPx = rig.camYPx + C.DESIGN_H + rand(0, 240);
       c.ph = rand(0, Math.PI * 2);
       c.vx = rand(-14, 14);
@@ -79,7 +80,8 @@ export class CoinView extends Component {
 
     const char = panda.charPx; // 世界 px(x 原点 = world 0,y 地面 0)
     const charRelX = char.x - rig.camX * C.PX_PER_M; // 转屏心相对,与金币同空间
-    const halfWBounce = rig.visibleWidthPx() / 2 - 30;
+    const halfW = rig.visibleWidthPx() / 2;
+    const halfWBounce = coinBounceHalfW(halfW);
     for (const c of this.pool) {
       if (!c.alive) continue;
       c.ph += dt * 2;

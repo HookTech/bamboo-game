@@ -181,6 +181,8 @@ interface Animal {
 ## 资源
 
 - 优先 CC0 / 可商用低模（Kenney、poly.pizza、Quaternius 等），与现有 `ASSETS.md` 流程一致。
+- 第一版动物：Quaternius（Poly Pizza）`bird` / `cat` / `dog` / `rabbit` GLB → `cocos/assets/models/animals/`。
+- 视觉高度目标（`AnimalModelScale`）：bird 0.45m / cat 0.55m / dog 0.60m / rabbit 0.50m。根节点 scale ≈ 0.3–0.7（Prefab 内 Armature 已 ×100，勿再按 mesh raw 放大）。
 - CC-BY 须署名。
 - 单模型面数/贴图对齐熊猫策略（低面、≤512 贴图、GLB）。
 - 加载失败：该 kind 占位胶囊着色；逻辑不依赖网格。

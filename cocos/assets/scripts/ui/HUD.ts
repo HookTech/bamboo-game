@@ -9,6 +9,7 @@ import { ScoreSystem } from '../core/ScoreSystem';
 const { ccclass } = _decorator;
 
 interface FloatLabel { node: Node; label: Label; life: number; }
+interface FollowBanter { node: Node; label: Label; }
 
 type Align = 'left' | 'center' | 'right';
 
@@ -25,6 +26,7 @@ export class HUD extends Component {
   private lHint!: Label;
   private bar!: Graphics;
   private floats: FloatLabel[] = [];
+  private followBanters = new Map<number, FollowBanter>();
 
   private uiW = C.DESIGN_W;
   private lastUiW = -1;
@@ -118,7 +120,7 @@ export class HUD extends Component {
     this.applyLabel(this.lHeight, leftX, 208, 22 * s, Math.max(160, w * 0.55));
     this.applyLabel(this.lBest, leftX, 184, 15 * s, Math.max(140, w * 0.5));
     this.applyLabel(this.lCombo, rightX, 244, 16 * s, 200);
-    this.applyLabel(this.lDizzy, 0, 244, 20 * s, Math.min(360, w * 0.9));
+    this.applyLabel(this.lDizzy, 0, 244, 20 * s, Math.min(520, w * 0.95));
     this.applyLabel(this.lTitle, 0, 48, 44 * s, Math.min(520, w * 0.95));
     this.applyLabel(this.lOverlay, 0, -12, 22 * s, Math.min(520, w * 0.95));
     this.applyLabel(this.lHint, 0, -h / 2 + 22, 14 * s, Math.min(520, w * 0.95));
@@ -138,7 +140,13 @@ export class HUD extends Component {
     this.lHeight.string = `高度 ${(state.heightPx / C.PX_PER_M).toFixed(1)}m`;
     this.lBest.string = `最高 ${score.bestMeters.toFixed(1)}m`;
     this.lCombo.string = state.combo > 0 ? `连击 x${state.combo}` : '';
-    this.lDizzy.string = state.stunned ? '竹子晕了…歇一下' : '';
+    if (!state.stunned) {
+      this.lDizzy.string = '';
+    } else if (state.stunReason === 'animal') {
+      this.lDizzy.string = '啊';
+    } else {
+      this.lDizzy.string = '别卷了，钱赚不完的';
+    }
 
     this.bar.clear();
     if (state.combo > 0) {
@@ -164,6 +172,85 @@ export class HUD extends Component {
 
   /** 世界坐标浮字(+N),经相机换算到 UI 空间 */
   floatText(txt: string, worldPos: Vec3, cam: Camera): void {
+    this.spawnFloat(txt, worldPos, cam, {
+      fontSize: Math.round(18 * this.fontScale),
+      color: new Color(255, 215, 110),
+      life: 1.1,
+      width: 200,
+    });
+  }
+
+  /** 压力台词挂到动物 id,每帧 syncFollowBanter 跟在胶囊旁。 */
+  startFollowBanter(id: number, txt: string): void {
+    this.endFollowBanter(id);
+    const n = new Node(`banter-${id}`);
+    n.layer = Layers.Enum.UI_2D;
+    this.node.addChild(n);
+    const ut = n.addComponent(UITransform);
+    const label = n.addComponent(Label);
+    const fontSize = Math.round(22 * this.fontScale);
+    ut.setContentSize(Math.min(this.uiW - 40, 480), fontSize + 22);
+    ut.setAnchorPoint(0.5, 0.5);
+    label.fontSize = fontSize;
+    label.lineHeight = fontSize + 6;
+    label.color = new Color(255, 150, 160, 255);
+    label.horizontalAlign = HorizontalTextAlignment.CENTER;
+    label.overflow = Label.Overflow.NONE;
+    label.enableOutline = true;
+    label.outlineColor = new Color(0, 0, 0, 200);
+    label.outlineWidth = 3;
+    label.useSystemFont = true;
+    label.string = txt;
+    // 先放中上方,等 sync 跟上胶囊(斜角出生换算常会飞出屏)
+    n.setPosition(0, 140, 0);
+    n.active = true;
+    n.setSiblingIndex(this.node.children.length - 1);
+    this.followBanters.set(id, { node: n, label });
+  }
+
+  /** 台词贴在胶囊外侧旁;UI 坐标钳进可见区,避免飞出屏。 */
+  syncFollowBanter(id: number, worldPos: Vec3, cam: Camera, side: -1 | 1): void {
+    const f = this.followBanters.get(id);
+    if (!f || !f.node.isValid) return;
+    const uiPos = cam.convertToUINode(worldPos, this.node);
+    const pad = 80 * this.fontScale;
+    let x = uiPos.x + side * pad;
+    let y = uiPos.y + 36;
+    const halfW = this.uiW * 0.5 - 24;
+    const halfH = (view.getVisibleSize().height > 1 ? view.getVisibleSize().height : C.DESIGN_H) * 0.5 - 40;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      x = side * 120;
+      y = 140;
+    }
+    x = Math.max(-halfW, Math.min(halfW, x));
+    y = Math.max(-halfH + 80, Math.min(halfH - 20, y));
+    f.node.setPosition(x, y, 0);
+    f.node.active = true;
+  }
+
+  endFollowBanter(id: number): void {
+    const f = this.followBanters.get(id);
+    if (!f) return;
+    if (f.node.isValid) f.node.destroy();
+    this.followBanters.delete(id);
+  }
+
+  /** 熊猫挨打浮字「啊」。 */
+  ouchText(worldPos: Vec3, cam: Camera): void {
+    this.spawnFloat('啊', worldPos, cam, {
+      fontSize: Math.round(36 * this.fontScale),
+      color: new Color(255, 90, 90),
+      life: 1.0,
+      width: 120,
+    });
+  }
+
+  private spawnFloat(
+    txt: string,
+    worldPos: Vec3,
+    cam: Camera,
+    opt: { fontSize: number; color: Color; life: number; width: number },
+  ): void {
     let f = this.floats.find(fl => fl.life <= 0);
     if (!f) {
       const n = new Node('float');
@@ -171,16 +258,20 @@ export class HUD extends Component {
       this.node.addChild(n);
       n.addComponent(UITransform);
       const label = n.addComponent(Label);
-      label.fontSize = Math.round(18 * this.fontScale);
-      label.color = new Color(255, 215, 110);
       f = { node: n, label, life: 0 };
       this.floats.push(f);
     }
+    const ut = f.node.getComponent(UITransform)!;
+    ut.setContentSize(opt.width, opt.fontSize + 16);
+    f.label.fontSize = opt.fontSize;
+    f.label.color = opt.color;
+    f.label.horizontalAlign = HorizontalTextAlignment.CENTER;
+    f.label.overflow = Label.Overflow.SHRINK;
     const uiPos = cam.convertToUINode(worldPos, this.node);
-    f.node.setPosition(uiPos);
+    f.node.setPosition(uiPos.x, uiPos.y + 36, 0);
     f.label.string = txt;
     f.node.active = true;
-    f.life = 1.1;
+    f.life = opt.life;
   }
 
   update(dt: number): void {

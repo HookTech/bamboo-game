@@ -25,14 +25,23 @@ export const GameConfig = {
 
   SWAY_MAX_PX: 44,
 
-  /** 单次满偏点按冲量 (px)；实际增量 = normX * IMPULSE_PX */
-  IMPULSE_PX: 90,
-  /** 冲量项钳制 (px) */
-  BEND_MAX_PX: 140,
+  /** 弯竹上限相对可见半宽的比例（1.0 ≈ 贴左右屏边） */
+  BEND_HALF_W_FRAC: 1,
+  /** 单次满偏冲量相对 bendMax 的比例 */
+  IMPULSE_BEND_FRAC: 0.45,
   /** 冲量指数衰减时间常数 (s) */
   BEND_TAU: 0.35,
-  /** auto + bend 合成后尖端总钳制 (px) */
-  TOTAL_SWAY_MAX_PX: 160,
+
+  /** 金币边距相对半宽；下限见 COIN_MARGIN_MIN_PX */
+  COIN_MARGIN_FRAC: 0.15,
+  COIN_MARGIN_MIN_PX: 24,
+  /** 窄屏刷点半宽保底 */
+  COIN_SPAWN_HALF_MIN_PX: 40,
+
+  /** 设计半宽(400)下的参考值；运行时用 layoutMath.*(visibleWidth/2) */
+  IMPULSE_PX: 180,
+  BEND_MAX_PX: 400,
+  TOTAL_SWAY_MAX_PX: 444,
 
   /** 相机与竹面距离:fov30 垂直 → 可视高 12m ↔ 600px @50px/m */
   CAMERA_DISTANCE_M: 22.4,
@@ -41,6 +50,31 @@ export const GameConfig = {
   SUN_X_FRAC: 0.58,
   SUN_LOCAL_Y: 5.5,
   SUN_LOCAL_Z: -37,
+
+  /** —— 空中动物危害 —— */
+  ANIMAL_TIER1_COINS: 20,
+  ANIMAL_TIER2_COINS: 50,
+  ANIMAL_TIER3_COINS: 100,
+  ANIMAL_SPAWN_GAP_T1_MIN: 8,
+  ANIMAL_SPAWN_GAP_T1_MAX: 12,
+  ANIMAL_SPAWN_GAP_T2_MIN: 6,
+  ANIMAL_SPAWN_GAP_T2_MAX: 9,
+  ANIMAL_SPAWN_GAP_T3_MIN: 5,
+  ANIMAL_SPAWN_GAP_T3_MAX: 8,
+  ANIMAL_MAX_ALIVE_T1_T2: 1,
+  ANIMAL_MAX_ALIVE_T3: 2,
+  ANIMAL_FADE_IN_S: 0.6,
+  ANIMAL_SPAWN_HEIGHT_PX: 160,
+  /** 出生点相对熊猫的水平对角偏置(斜左右角) */
+  ANIMAL_SPAWN_DIAG_X_PX: 240,
+  ANIMAL_SIDE_OFFSET_PX: 55,
+  ANIMAL_DIVE_SPEED_PX: 90,
+  ANIMAL_HIT_RADIUS_PX: 72,
+  ANIMAL_KNOCK_RADIUS_PX: 70,
+  ANIMAL_KNOCK_BEND_MIN_PX: 50,
+  ANIMAL_COIN_LOSS: 5,
+  ANIMAL_POST_HIT_COOLDOWN_S: 3,
+  ANIMAL_KNOCK_DESPAWN_S: 0.8,
 } as const;
 
 export const px2m = (px: number): number => px / GameConfig.PX_PER_M;

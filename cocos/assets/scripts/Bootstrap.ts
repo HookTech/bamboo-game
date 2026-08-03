@@ -16,6 +16,10 @@ import { AudioFx } from './fx/AudioFx';
 import { ParticleFx } from './fx/ParticleFx';
 import { GameConfig as C, px2m } from './core/GameConfig';
 import { BendController } from './core/BendController';
+import { totalSwayMaxPx } from './core/layoutMath';
+import { AnimalHazard } from './core/AnimalHazard';
+import { pickAnimalTaunt } from './core/AnimalTaunts';
+import { AnimalView } from './view/AnimalView';
 
 const { ccclass } = _decorator;
 
@@ -35,6 +39,8 @@ export class Bootstrap extends Component {
   private hud!: HUD;
   private audioFx = new AudioFx();
   private bend = new BendController();
+  private hazard = new AnimalHazard();
+  private animals!: AnimalView;
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
   private lastBestCheck = 0;
@@ -137,6 +143,37 @@ export class Bootstrap extends Component {
     this.hud.build();
     this.hud.refresh(this.state, this.score);
 
+    const animalNode = new Node('Animals');
+    this.node.scene!.addChild(animalNode);
+    this.animals = animalNode.addComponent(AnimalView);
+    this.animals.initMaterials(effect);
+    this.animals.bind(this.hazard);
+
+    this.hazard.on('knock', (a) => {
+      this.audioFx.animalKnock();
+      this.hud.endFollowBanter(a.id);
+    });
+    this.hazard.on('taunt', (a) => {
+      const taunt = pickAnimalTaunt();
+      console.log(`[animal] taunt kind=${a.kind} text=${taunt}`);
+      this.hud.startFollowBanter(a.id, taunt);
+    });
+    this.hazard.on('despawn', (a) => {
+      this.hud.endFollowBanter(a.id);
+    });
+    this.hazard.on('hit', (a) => {
+      this.state.applyExternalStun();
+      const lost = this.score.loseCoins(C.ANIMAL_COIN_LOSS);
+      console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins}`);
+      this.audioFx.coinDrop();
+      const p = this.panda.charPx;
+      const wpos = new Vec3(px2m(p.x), px2m(p.y), 0);
+      fx.coinDrop(wpos);
+      this.hud.ouchText(wpos, this.cam);
+      this.hud.endFollowBanter(a.id);
+      this.hud.refresh(this.state, this.score);
+    });
+
     this.state.on('start', () => this.hud.showOverlay(false));
     this.state.on('grow', () => {
       this.audioFx.press();
@@ -144,7 +181,8 @@ export class Bootstrap extends Component {
       this.hud.refresh(this.state, this.score);
     });
     this.state.on('stun', () => {
-      this.audioFx.bad();
+      if (this.state.stunReason === 'animal') this.audioFx.ouch();
+      else this.audioFx.bad();
       this.rig.kick(14);
       this.hud.refresh(this.state, this.score);
     });
@@ -231,8 +269,37 @@ export class Bootstrap extends Component {
     if (!this.ready) return;
     dt = Math.min(dt, 0.05);
     this.state.update(dt);
+    const halfW = this.rig.visibleWidthPx() / 2;
+    this.bend.setHalfW(halfW);
     this.bend.update(dt);
-    if (this.bamboo) this.bamboo.bendOffsetPx = this.bend.offsetPx;
+    if (this.bamboo) {
+      this.bamboo.bendOffsetPx = this.bend.offsetPx;
+      this.bamboo.totalSwayMaxPx = totalSwayMaxPx(halfW);
+    }
+    const tipX = C.BAMBOO_X_PX - C.DESIGN_W / 2 + this.bend.offsetPx;
+    const tipY = this.state.heightPx;
+    const panda = this.panda.charPx;
+    this.hazard.update({
+      dt,
+      t: this.state.t,
+      started: this.state.started,
+      stunned: this.state.stunned,
+      coins: this.score.coins,
+      tipX,
+      tipY,
+      pandaX: panda.x,
+      pandaY: panda.y,
+      bendOffset: this.bend.offsetPx,
+    });
+    for (const a of this.hazard.animals) {
+      if (a.phase === 'gone' || a.phase === 'knock') continue;
+      this.hud.syncFollowBanter(
+        a.id,
+        new Vec3(px2m(a.xPx), px2m(a.yPx), 0),
+        this.cam,
+        a.side,
+      );
+    }
     this.rig.follow(this.state.heightPx, dt);
     // 最高分每秒至多写一次;内存 bestMeters 由 HUD 每帧读 state 高度刷新
     if (this.state.t - this.lastBestCheck > 1) {

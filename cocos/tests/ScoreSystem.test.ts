@@ -39,4 +39,18 @@ describe('ScoreSystem', () => {
     expect(writes).toEqual(['10', '15']);
     jest.restoreAllMocks();
   });
+
+  it('loseCoins subtracts coins only and clamps at 0', () => {
+    const s = new ScoreSystem(freshStorage());
+    s.pickup(0);
+    s.pickup(0);
+    s.pickup(0);
+    expect(s.coins).toBe(3);
+    expect(s.score).toBe(3);
+    expect(s.loseCoins(5)).toBe(3);
+    expect(s.coins).toBe(0);
+    expect(s.score).toBe(3);
+    expect(s.loseCoins(2)).toBe(0);
+    expect(s.coins).toBe(0);
+  });
 });

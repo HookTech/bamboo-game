@@ -59,4 +59,22 @@ export class AudioFx {
     this.tone(PENTA[i], 0.25, 'sine', 0.2);
     this.tone(PENTA[i] * 2, 0.18, 'sine', 0.06, 0.02);
   }
+
+  /** 掉币:下行短音,区别拾币上行五声。 */
+  coinDrop(): void {
+    this.tone(320, 0.12, 'triangle', 0.14, 0, -180);
+    this.tone(180, 0.16, 'sine', 0.1, 0.04, -80);
+  }
+
+  /** 熊猫被动物撞到。 */
+  ouch(): void {
+    this.tone(720, 0.11, 'square', 0.14, 0, -280);
+    this.tone(380, 0.18, 'sawtooth', 0.09, 0.03, -120);
+  }
+
+  /** 撞飞动物。 */
+  animalKnock(): void {
+    this.tone(420, 0.1, 'square', 0.1, 0, -200);
+    this.tone(260, 0.14, 'triangle', 0.08, 0.03, -120);
+  }
 }

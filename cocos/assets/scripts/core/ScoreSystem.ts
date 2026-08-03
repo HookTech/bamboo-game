@@ -21,6 +21,13 @@ export class ScoreSystem {
     return mult;
   }
 
+  /** 撞击掉币:只减 coins,不改 score。返回实际扣掉数量。 */
+  loseCoins(n: number): number {
+    const loss = Math.min(Math.max(0, Math.floor(n)), this.coins);
+    this.coins -= loss;
+    return loss;
+  }
+
   /** 高度破纪录时写入,返回是否破了纪录。 */
   updateBest(heightPx: number): boolean {
     const m = heightPx / C.PX_PER_M;

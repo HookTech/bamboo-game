@@ -12,6 +12,8 @@ export class BambooMesh extends Component {
   swayPx = 0;
   /** 由 Bootstrap 每帧写入 BendController.offsetPx */
   bendOffsetPx = 0;
+  /** 由 Bootstrap 按可见半宽写入；默认设计参考 */
+  totalSwayMaxPx = C.TOTAL_SWAY_MAX_PX;
 
   private cyl: Mesh | null = null;
   private segs: Node[] = [];
@@ -61,7 +63,7 @@ export class BambooMesh extends Component {
     const s = this.state;
     if (!s || !this.matA || !this.matB || !this.matDizzy) return;
     const auto = tipSwayPx(s.t, s.heightPx, s.targetHeightPx, s.stunned);
-    this.swayPx = composeTipSwayPx(auto, this.bendOffsetPx);
+    this.swayPx = composeTipSwayPx(auto, this.bendOffsetPx, this.totalSwayMaxPx);
     const h = s.heightPx;
     if (h < 4) {
       for (const seg of this.segs) seg.active = false;

@@ -1,11 +1,13 @@
 import { BendController } from '../assets/scripts/core/BendController';
 import { GameConfig as C } from '../assets/scripts/core/GameConfig';
+import { bendMaxPx, impulsePx } from '../assets/scripts/core/layoutMath';
 
 describe('BendController', () => {
-  it('impulse pushes toward normX and clamps to ±BEND_MAX_PX', () => {
+  it('impulse pushes toward normX and clamps to design ±BEND_MAX_PX', () => {
     const b = new BendController();
     b.impulse(1);
     expect(b.offsetPx).toBeCloseTo(C.IMPULSE_PX);
+    b.impulse(1);
     b.impulse(1);
     expect(b.offsetPx).toBeCloseTo(C.BEND_MAX_PX);
     b.impulse(-1);
@@ -36,5 +38,20 @@ describe('BendController', () => {
     expect(b.offsetPx).toBeCloseTo(C.IMPULSE_PX);
     b.impulse(-10);
     expect(b.offsetPx).toBeCloseTo(0);
+  });
+
+  it('setHalfW refreshes limits and reclamps offset', () => {
+    const b = new BendController();
+    b.setHalfW(400);
+    expect(b.maxPx).toBeCloseTo(bendMaxPx(400));
+    expect(b.impulseStepPx).toBeCloseTo(impulsePx(400));
+    // push to max then shrink viewport
+    b.impulse(1);
+    b.impulse(1);
+    b.impulse(1);
+    expect(b.offsetPx).toBeCloseTo(bendMaxPx(400));
+    b.setHalfW(169);
+    expect(b.maxPx).toBeCloseTo(bendMaxPx(169));
+    expect(Math.abs(b.offsetPx)).toBeLessThanOrEqual(b.maxPx + 1e-6);
   });
 });

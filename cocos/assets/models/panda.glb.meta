@@ -505,6 +505,12 @@
             "to": 4.666666507720947,
             "wrapMode": 2,
             "previousId": "63e6e"
+          },
+          {
+            "name": "Kick",
+            "from": 0.0,
+            "to": 0.4,
+            "wrapMode": 1
           }
         ]
       }

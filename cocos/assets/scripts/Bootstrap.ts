@@ -149,6 +149,9 @@ export class Bootstrap extends Component {
     this.animals.initMaterials(effect);
     this.animals.bind(this.hazard);
 
+    this.hazard.on('kickStart', (a) => {
+      this.panda.playKick(a.side);
+    });
     this.hazard.on('knock', (a) => {
       this.audioFx.animalKnock();
       this.hud.endFollowBanter(a.id);

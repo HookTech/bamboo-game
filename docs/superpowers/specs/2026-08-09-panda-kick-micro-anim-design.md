@@ -1,7 +1,7 @@
 # 熊猫踢腿微动作 · Additive 击飞设计
 
 日期: 2026-08-09  
-状态: 实现中（逻辑完成；Kick 切片待 Creator reimport / 预览校准）  
+状态: 已实现  
 分支: `feature/panda-kick-micro-anim`  
 关联:
 

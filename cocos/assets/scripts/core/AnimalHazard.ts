@@ -1,8 +1,8 @@
 import { GameConfig as C } from './GameConfig';
 
 export type AnimalKind = 'bird' | 'cat' | 'dog' | 'rabbit';
-export type AnimalPhase = 'fadeIn' | 'dive' | 'knock' | 'hit' | 'gone';
-export type AnimalEvent = 'spawn' | 'knock' | 'hit' | 'despawn' | 'taunt';
+export type AnimalPhase = 'fadeIn' | 'dive' | 'kick' | 'knock' | 'hit' | 'gone';
+export type AnimalEvent = 'spawn' | 'kickStart' | 'knock' | 'hit' | 'despawn' | 'taunt';
 
 export interface Animal {
   id: number;
@@ -12,6 +12,7 @@ export interface Animal {
   side: -1 | 1;
   phase: AnimalPhase;
   age: number;
+  kickAge: number;
   knockAge: number;
   taunted: boolean;
 }
@@ -113,6 +114,7 @@ export class AnimalHazard {
       yPx: inp.pandaY + C.ANIMAL_SPAWN_HEIGHT_PX,
       phase: 'fadeIn',
       age: 0,
+      kickAge: 0,
       knockAge: 0,
       taunted: false,
     };

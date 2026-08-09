@@ -1,8 +1,8 @@
 import { GameConfig as C } from './GameConfig';
 
 export type AnimalKind = 'bird' | 'cat' | 'dog' | 'rabbit';
-export type AnimalPhase = 'fadeIn' | 'dive' | 'knock' | 'hit' | 'gone';
-export type AnimalEvent = 'spawn' | 'knock' | 'hit' | 'despawn' | 'taunt';
+export type AnimalPhase = 'fadeIn' | 'dive' | 'kick' | 'knock' | 'hit' | 'gone';
+export type AnimalEvent = 'spawn' | 'kickStart' | 'knock' | 'hit' | 'despawn' | 'taunt';
 
 export interface Animal {
   id: number;
@@ -12,6 +12,7 @@ export interface Animal {
   side: -1 | 1;
   phase: AnimalPhase;
   age: number;
+  kickAge: number;
   knockAge: number;
   taunted: boolean;
 }
@@ -113,6 +114,7 @@ export class AnimalHazard {
       yPx: inp.pandaY + C.ANIMAL_SPAWN_HEIGHT_PX,
       phase: 'fadeIn',
       age: 0,
+      kickAge: 0,
       knockAge: 0,
       taunted: false,
     };
@@ -177,13 +179,22 @@ export class AnimalHazard {
         }
         continue;
       }
+      if (a.phase === 'kick') {
+        a.kickAge += inp.dt;
+        if (a.kickAge >= C.KICK_CONTACT_S) {
+          a.phase = 'knock';
+          a.knockAge = 0;
+          this.emit('knock', a);
+        }
+        continue;
+      }
       if (a.phase === 'hit') continue;
       if (hitThisFrame) continue;
       // 先撞飞判定(未移动),再积分运动,再撞击 —— 进圈当帧即可 hit
       if (this.canKnock(a, inp)) {
-        a.phase = 'knock';
-        a.knockAge = 0;
-        this.emit('knock', a);
+        a.phase = 'kick';
+        a.kickAge = 0;
+        this.emit('kickStart', a);
         continue;
       }
       this.integrate(a, inp);

@@ -111,6 +111,29 @@
       ],
       "subMetas": {}
     },
+    "5c7d9": {
+      "importer": "gltf-animation",
+      "uuid": "16b18872-b41f-441e-be11-00f42363f347@5c7d9",
+      "displayName": "",
+      "id": "5c7d9",
+      "name": "Kick.animation",
+      "userData": {
+        "gltfIndex": 0,
+        "wrapMode": 1,
+        "sample": 30,
+        "span": {
+          "from": 0,
+          "to": 0.4
+        },
+        "events": []
+      },
+      "ver": "1.0.18",
+      "imported": true,
+      "files": [
+        ".bin"
+      ],
+      "subMetas": {}
+    },
     "f9d1d": {
       "importer": "gltf-skeleton",
       "uuid": "16b18872-b41f-441e-be11-00f42363f347@f9d1d",
@@ -505,6 +528,13 @@
             "to": 4.666666507720947,
             "wrapMode": 2,
             "previousId": "63e6e"
+          },
+          {
+            "name": "Kick",
+            "from": 0,
+            "to": 0.4,
+            "wrapMode": 1,
+            "previousId": "5c7d9"
           }
         ]
       }

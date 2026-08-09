@@ -108,6 +108,7 @@ describe('AnimalHazard combat', () => {
       side: 1 as const,
       phase: 'dive' as const,
       age: 1,
+      kickAge: 0,
       knockAge: 0,
       taunted: false,
       ...over,
@@ -130,14 +131,61 @@ describe('AnimalHazard combat', () => {
     bendOffset: 0,
   };
 
-  it('knocks when tip in radius, bend strong and same side', () => {
+  it('enters kick (not knock) when tip in radius, bend strong and same side', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { xPx: 40, yPx: 200, side: 1, phase: 'dive' });
+    let kicks = 0;
+    let knocked = 0;
+    h.on('kickStart', () => kicks++);
+    h.on('knock', () => knocked++);
+    h.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60 });
+    expect(kicks).toBe(1);
+    expect(knocked).toBe(0);
+    expect(a.phase).toBe('kick');
+  });
+
+  it('commits knock after KICK_CONTACT_S', () => {
     const h = new AnimalHazard(() => 0);
     const a = mkAnimal(h, { xPx: 40, yPx: 200, side: 1, phase: 'dive' });
     let knocked = 0;
     h.on('knock', () => knocked++);
-    h.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60 });
+    h.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60, dt: 0.05 });
+    expect(a.phase).toBe('kick');
+    h.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60, dt: C.KICK_CONTACT_S });
     expect(knocked).toBe(1);
     expect(a.phase).toBe('knock');
+  });
+
+  it('freezes position and ignores hit during kick', () => {
+    const h = new AnimalHazard(() => 0);
+    const a = mkAnimal(h, { xPx: 40, yPx: 200, side: 1, phase: 'dive' });
+    let hits = 0;
+    h.on('hit', () => hits++);
+    h.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60, dt: 0.05 });
+    a.xPx = 0;
+    a.yPx = 174;
+    h.update({
+      ...inp,
+      tipX: 0,
+      tipY: 200,
+      pandaX: 0,
+      pandaY: 174,
+      bendOffset: 0,
+      dt: 0.05,
+    });
+    expect(hits).toBe(0);
+    expect(a.phase).toBe('kick');
+    expect(a.phase).not.toBe('gone');
+    const h2 = new AnimalHazard(() => 0);
+    const b = mkAnimal(h2, { xPx: 40, yPx: 200, side: 1, phase: 'dive' });
+    h2.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60, dt: 0.05 });
+    const bx = b.xPx;
+    const by = b.yPx;
+    // dt 须 < 剩余 KICK_CONTACT，否则会 commitKnock
+    h2.update({ ...inp, tipX: 200, tipY: 400, bendOffset: 0, dt: 0.05, pandaX: 0, pandaY: 174 });
+    expect(b.xPx).toBe(bx);
+    expect(b.yPx).toBe(by);
+    expect(b.phase).toBe('kick');
   });
 
   it('hits panda when close without valid knock bend', () => {
@@ -178,16 +226,17 @@ describe('AnimalHazard combat', () => {
     expect(hits).toBe(1);
   });
 
-  it('prefers knock over hit same frame', () => {
+  it('prefers kick over hit same frame', () => {
     const h = new AnimalHazard(() => 0);
     const a = mkAnimal(h, { xPx: 20, yPx: 180, side: 1, phase: 'dive' });
-    let knock = 0, hits = 0;
-    h.on('knock', () => knock++);
+    let kicks = 0;
+    let hits = 0;
+    h.on('kickStart', () => kicks++);
     h.on('hit', () => hits++);
     h.update({ ...inp, tipX: 0, tipY: 180, pandaX: 0, pandaY: 174, bendOffset: 80 });
-    expect(knock).toBe(1);
+    expect(kicks).toBe(1);
     expect(hits).toBe(0);
-    expect(a.phase).toBe('knock');
+    expect(a.phase).toBe('kick');
   });
 
   it('freezes motion while stunned and despawns after knock timer', () => {

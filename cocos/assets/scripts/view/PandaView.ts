@@ -1,6 +1,6 @@
 import {
   _decorator, Component, MeshRenderer, Material, Color, Vec3, utils, primitives,
-  EffectAsset, assetManager, Prefab, instantiate, Node,
+  EffectAsset, assetManager, Prefab, instantiate, Node, SkeletalAnimation,
 } from 'cc';
 import { GameConfig as C, px2m } from '../core/GameConfig';
 import { GameState } from '../core/GameState';
@@ -19,6 +19,9 @@ export class PandaView extends Component {
   private body!: MeshRenderer;
   private mat: Material | null = null;
   private model: Node | null = null;
+  private anim: SkeletalAnimation | null = null;
+  private kickMirrorUntil = 0;
+  private baseModelScaleX = 1;
 
   onLoad(): void {
     // 占位胶囊:半径 0.2m,圆柱段高 0.5m —— GLB 失败时保留
@@ -78,7 +81,29 @@ export class PandaView extends Component {
     // glTF 默认朝 -Z;相机在 +Z 看过来 → 转 180° 让脸朝玩家(旋在子节点,不影响父节点眩晕晃动)
     model.setRotationFromEuler(0, 180, 0);
     this.model = model;
+    this.anim = model.getComponent(SkeletalAnimation)
+      ?? model.getComponentInChildren(SkeletalAnimation);
+    this.baseModelScaleX = model.scale.x;
     this.body.enabled = false;
+  }
+
+  /** Bootstrap 在 kickStart 时调用；side 与 Animal.side 一致。 */
+  playKick(side: -1 | 1): void {
+    const model = this.model;
+    if (!model?.isValid) return;
+    // 镜像打在模型子节点，不影响父节点 stun euler
+    const sx = this.baseModelScaleX * (side < 0 ? -1 : 1);
+    model.setScale(sx, model.scale.y, model.scale.z);
+    this.kickMirrorUntil = C.KICK_CLIP_S;
+    const anim = this.anim;
+    if (!anim) return;
+    // clip 名与 meta 切片一致；缺失时静默（hazard 仍会 knock）
+    const name = anim.clips?.some((c) => c?.name === 'Kick') ? 'Kick' : 'Animation';
+    try {
+      anim.crossFade(name, 0.05);
+    } catch {
+      // clip 未就绪时忽略
+    }
   }
 
   attach(state: GameState): void {
@@ -87,6 +112,13 @@ export class PandaView extends Component {
   }
 
   update(dt: number): void {
+    if (this.kickMirrorUntil > 0) {
+      this.kickMirrorUntil = Math.max(0, this.kickMirrorUntil - dt);
+      if (this.kickMirrorUntil === 0 && this.model?.isValid) {
+        const m = this.model;
+        m.setScale(this.baseModelScaleX, m.scale.y, m.scale.z);
+      }
+    }
     const s = this.state;
     if (!s || !this.bamboo || !this.mat) return;
     this.flash = Math.max(0, this.flash - dt * 4);

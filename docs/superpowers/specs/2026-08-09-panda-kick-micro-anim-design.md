@@ -1,7 +1,8 @@
 # 熊猫踢腿微动作 · Additive 击飞设计
 
 日期: 2026-08-09  
-状态: 待实现  
+状态: 实现中  
+分支: `feature/panda-kick-micro-anim`  
 关联:
 
 - `docs/superpowers/specs/2026-08-03-sky-animal-hazard-design.md`

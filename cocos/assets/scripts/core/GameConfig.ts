@@ -75,6 +75,13 @@ export const GameConfig = {
   ANIMAL_COIN_LOSS: 5,
   ANIMAL_POST_HIT_COOLDOWN_S: 3,
   ANIMAL_KNOCK_DESPAWN_S: 0.8,
+  /** 进入 kick 后到 commitKnock（接触帧） */
+  KICK_CONTACT_S: 0.15,
+  /** 踢腿 clip 播放时长（镜像结束后可提前恢复 scale） */
+  KICK_CLIP_S: 0.4,
+  /** 从 panda Animation 截取 Kick 的起止秒（预览后可改 meta + 此处文档对齐） */
+  KICK_CLIP_FROM: 0.0,
+  KICK_CLIP_TO: 0.4,
 } as const;
 
 export const px2m = (px: number): number => px / GameConfig.PX_PER_M;

@@ -181,7 +181,8 @@ describe('AnimalHazard combat', () => {
     h2.update({ ...inp, tipX: 0, tipY: 200, bendOffset: 60, dt: 0.05 });
     const bx = b.xPx;
     const by = b.yPx;
-    h2.update({ ...inp, tipX: 200, tipY: 400, bendOffset: 0, dt: 0.2, pandaX: 0, pandaY: 174 });
+    // dt 须 < 剩余 KICK_CONTACT，否则会 commitKnock
+    h2.update({ ...inp, tipX: 200, tipY: 400, bendOffset: 0, dt: 0.05, pandaX: 0, pandaY: 174 });
     expect(b.xPx).toBe(bx);
     expect(b.yPx).toBe(by);
     expect(b.phase).toBe('kick');

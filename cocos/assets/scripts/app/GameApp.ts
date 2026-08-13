@@ -24,6 +24,7 @@ import { mergeRuntimeConfig } from '../core/mergeRuntimeConfig';
 import { setRuntimeConfig, getRuntimeConfig } from '../core/RuntimeConfig';
 import type { ScenePack } from '../content/ScenePack';
 import { AnimalView } from '../view/AnimalView';
+import { AnimController } from '../character/AnimController';
 
 /** 运行时构建全部节点 —— Bootstrap 只负责 preload effect 后交给本类。 */
 export class GameApp {
@@ -38,6 +39,7 @@ export class GameApp {
   private bend = new BendController();
   private hazard = new AnimalHazard();
   private animals!: AnimalView;
+  private anim = new AnimController();
   private pack!: ScenePack;
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
@@ -141,7 +143,11 @@ export class GameApp {
     this.animals.bind(this.hazard);
 
     this.hazard.on('kickStart', (a) => {
-      this.panda.playKick(a.side);
+      this.anim.playOverlay('kick', {
+        duration: getRuntimeConfig().KICK_CLIP_S,
+        priority: 10,
+        side: a.side,
+      });
     });
     this.hazard.on('knock', (a) => {
       this.audioFx.animalKnock();
@@ -173,12 +179,14 @@ export class GameApp {
       this.audioFx.press();
       fx.splashLeaves();
       this.hud.refresh(this.state, this.score);
+      this.anim.playOverlay('pressBounce', { duration: 0.25, priority: 1 });
     });
     this.state.on('stun', () => {
       if (this.state.stunReason === 'animal') this.audioFx.ouch();
       else this.audioFx.bad();
       this.rig.kick(14);
       this.hud.refresh(this.state, this.score);
+      this.anim.setStunned(true);
     });
 
     coins.onPickup = (pos) => {
@@ -297,6 +305,9 @@ export class GameApp {
       );
     }
     this.rig.follow(this.state.heightPx, dt);
+    this.anim.setStunned(this.state.stunned);
+    this.panda.applyAnim(this.anim); // before update so new overlays have age===0
+    this.anim.update(dt);
     // 最高分每秒至多写一次;内存 bestMeters 由 HUD 每帧读 state 高度刷新
     if (this.state.t - this.lastBestCheck > 1) {
       this.lastBestCheck = this.state.t;

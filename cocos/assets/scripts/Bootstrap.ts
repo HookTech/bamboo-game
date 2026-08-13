@@ -18,7 +18,8 @@ import { GameConfig as C, px2m } from './core/GameConfig';
 import { BendController } from './core/BendController';
 import { totalSwayMaxPx } from './core/layoutMath';
 import { AnimalHazard } from './core/AnimalHazard';
-import { pickAnimalTaunt } from './core/AnimalTaunts';
+import { pickFromPool } from './core/AnimalTaunts';
+import { resolveScenePack } from './app/ActiveScene';
 import { AnimalView } from './view/AnimalView';
 
 const { ccclass } = _decorator;
@@ -157,7 +158,7 @@ export class Bootstrap extends Component {
       this.hud.endFollowBanter(a.id);
     });
     this.hazard.on('taunt', (a) => {
-      const taunt = pickAnimalTaunt();
+      const taunt = pickFromPool(resolveScenePack().animals.taunts);
       console.log(`[animal] taunt kind=${a.kind} text=${taunt}`);
       this.hud.startFollowBanter(a.id, taunt);
     });

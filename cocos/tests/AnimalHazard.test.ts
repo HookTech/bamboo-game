@@ -6,6 +6,11 @@ import {
   maxAliveForTier,
 } from '../assets/scripts/core/AnimalHazard';
 import { GameConfig as C } from '../assets/scripts/core/GameConfig';
+import { resetRuntimeConfig } from '../assets/scripts/core/RuntimeConfig';
+
+beforeEach(() => {
+  resetRuntimeConfig();
+});
 
 describe('animal tiers', () => {
   it('maps coin thresholds to tiers', () => {

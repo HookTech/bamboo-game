@@ -3,7 +3,9 @@ import {
   EffectAsset, assetManager, Prefab, instantiate, Node, SkeletalAnimation,
 } from 'cc';
 import { GameConfig as C, px2m } from '../core/GameConfig';
+import { getRuntimeConfig } from '../core/RuntimeConfig';
 import { GameState } from '../core/GameState';
+import type { AnimController } from '../character/AnimController';
 import { BambooMesh } from './BambooMesh';
 
 const { ccclass } = _decorator;
@@ -22,6 +24,7 @@ export class PandaView extends Component {
   private anim: SkeletalAnimation | null = null;
   private kickMirrorUntil = 0;
   private baseModelScaleX = 1;
+  private stunnedBase = false;
 
   onLoad(): void {
     // 占位胶囊:半径 0.2m,圆柱段高 0.5m —— GLB 失败时保留
@@ -87,14 +90,23 @@ export class PandaView extends Component {
     this.body.enabled = false;
   }
 
-  /** Bootstrap 在 kickStart 时调用；side 与 Animal.side 一致。 */
-  playKick(side: -1 | 1): void {
+  /** Drive skeletal/micro-anims from AnimController (call before anim.update so overlays have age===0). */
+  applyAnim(ctrl: AnimController): void {
+    const ov = ctrl.overlay;
+    if (ov?.id === 'kick' && ov.age === 0) {
+      this.beginKick(ov.side);
+    }
+    this.stunnedBase = ctrl.base === 'stunned';
+  }
+
+  /** side 与 Animal.side 一致；镜像 + kick clip。 */
+  private beginKick(side: -1 | 1): void {
     const model = this.model;
     if (!model?.isValid) return;
     // 镜像打在模型子节点，不影响父节点 stun euler
     const sx = this.baseModelScaleX * (side < 0 ? -1 : 1);
     model.setScale(sx, model.scale.y, model.scale.z);
-    this.kickMirrorUntil = C.KICK_CLIP_S;
+    this.kickMirrorUntil = getRuntimeConfig().KICK_CLIP_S;
     const anim = this.anim;
     if (!anim) return;
     // clip 名与 meta 切片一致；缺失时静默（hazard 仍会 knock）
@@ -128,7 +140,7 @@ export class PandaView extends Component {
     const bounce = Math.sin(s.t * 3) * 2 - this.flash * 4; // 原型回弹(px)
     // 横向:贴竹身右侧 16px,随竹尖摆动按 ratio² 偏移
     this.node.setPosition(px2m(16 + this.bamboo.swayPx * ratio * ratio), px2m(charWY + bounce), 0);
-    this.node.eulerAngles = s.stunned
+    this.node.eulerAngles = this.stunnedBase
       ? new Vec3(0, 0, Math.sin(s.t * 20) * 8.6)
       : new Vec3(0, 0, 0);
   }

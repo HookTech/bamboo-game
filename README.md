@@ -7,21 +7,45 @@
 ## 特性
 
 - 节奏生长：间隔合适连击上涨，按太急会眩晕
+- 侧点弯竹，撞飞空中动物；过近则被撞眩晕并掉币
 - 金币磁吸拾取，连击越高得分倍率越高
 - 天空随高度由白昼渐入星空（云 / 日月 / 随机星点）
 - 程序化竹干、粒子与 WebAudio 音效
-- 核心玩法与渲染分离，可用 Jest 单测
+- **分层架构**：玩法逻辑 / 场景内容包 / 角色微动作 / 表现分离，Jest 可测 core 与 character
 
 ## 玩法
 
 | 操作 | 效果 |
 | --- | --- |
 | 空格 / 触摸（间隔 0.12s–0.55s） | 竹子生长，连击 +1（上限 x12），连击越高长得越多 |
+| 侧点屏幕 | 竹梢往对应侧弯曲 |
 | 按太急（&lt;0.12s） | 眩晕 0.9s，连击清零，屏幕抖动 |
 | 按太慢（&gt;0.55s） | 连击中断，重新计数 |
 
 - 金币靠近角色会磁吸，拾取得分倍率 `1 + floor(连击 / 4)`
 - 最高纪录本地持久化（浏览器 `localStorage` / 小游戏 `storage`）
+
+## 架构（简要）
+
+```text
+输入 → RhythmJudge → GameState
+  → GameApp 接线 → AnimController / FX / HUD / Score / Bend / AnimalHazard
+
+场景内容 = ScenePack（default | work | cny）
+  · 文案 / 台词池 / 植被资源 key / 可覆盖的动物数值切片
+角色微动作 = AnimController（Base + Overlay，可扩展 kick / stun 等）
+```
+
+| 目录 | 职责 |
+| --- | --- |
+| `app/` | `Bootstrap` 入口委托；`GameApp` 组装与主循环；`ACTIVE_SCENE_ID` |
+| `content/` | `ScenePack` 与 default / work / cny 内容包 |
+| `character/` | 分层微动作状态机（纯逻辑） |
+| `core/` | 玩法与配置（零渲染依赖） |
+| `view/` `fx/` `ui/` | 表现层 |
+| `platform/` | 输入与存储适配 |
+
+切换场景内容包（无选关 UI）：改 `cocos/assets/scripts/app/ActiveScene.ts` 里的 `ACTIVE_SCENE_ID` 为 `'default' | 'work' | 'cny'`。
 
 ## 仓库结构
 
@@ -29,7 +53,7 @@
 bamboo-game/
 ├── cocos/                 # 主工程（Cocos Creator 3.8.8）
 │   ├── assets/
-│   │   ├── scripts/       # Bootstrap / core / view / fx / ui / platform
+│   │   ├── scripts/       # app / content / character / core / view / fx / ui / platform
 │   │   ├── models/        # GLB（models Asset Bundle）
 │   │   └── resources/     # effect 等
 │   ├── tests/             # Jest 单测（纯逻辑，不依赖引擎）
@@ -52,7 +76,7 @@ bamboo-game/
 
 1. 用 Cocos Creator **3.8.8** 打开 `cocos/` 目录  
 2. 打开场景 `assets/main.scene`（场景中挂有 `Bootstrap`）  
-3. 点击预览；空格开始游戏  
+3. 点击预览；空格或点屏幕开始  
 
 首次打开若 IDE 报找不到 `cc` 模块，等编辑器生成 `cocos/temp/tsconfig.cocos.json` 后会消失（`tsconfig.json` 已 extends 该文件）。
 
@@ -98,13 +122,19 @@ python3 -m http.server 8931
 
 ## 文档
 
+- [分层架构重构设计](./docs/superpowers/specs/2026-08-13-layered-architecture-refactor-design.md)（内容包 + 微动作）
 - [Cocos 重写设计](./docs/superpowers/specs/2026-07-29-bamboo-cocos-rewrite-design.md)
-- [天空 CC0 道具设计](./docs/superpowers/specs/2026-07-31-sky-cc0-props-design.md)
-- [实现计划](./docs/superpowers/plans/2026-07-29-bamboo-cocos-rewrite.md)
+- [空中动物危害](./docs/superpowers/specs/2026-08-03-sky-animal-hazard-design.md)
+- [熊猫踢腿微动作](./docs/superpowers/specs/2026-08-09-panda-kick-micro-anim-design.md)
 
 ## 贡献
 
-欢迎 Issue / PR。改玩法参数请优先动 `cocos/assets/scripts/core/GameConfig.ts`，并补对应单测。提交前请在 `cocos/` 下跑通 `npm test`。
+欢迎 Issue / PR。
+
+- 改节奏/生长等核心数值：优先 `cocos/assets/scripts/core/GameConfig.ts`
+- 改场景文案、台词、植被资源或可主题化动物参数：改对应 `content/packs/*`，或扩展 `ThemeableConfig`
+- 加角色微动作：在 `character/AnimController` 注册 Overlay / Base，由 `PandaView.applyAnim` 应用
+- 提交前在 `cocos/` 下跑通 `npm test`
 
 ## 许可证
 

@@ -1,12 +1,15 @@
-import { ANIMAL_TAUNTS, pickAnimalTaunt } from '../assets/scripts/core/AnimalTaunts';
+import { pickFromPool } from '../assets/scripts/core/AnimalTaunts';
+import { defaultPack } from '../assets/scripts/content/packs/defaultPack';
 
 describe('AnimalTaunts', () => {
-  it('pool is non-empty', () => {
-    expect(ANIMAL_TAUNTS.length).toBeGreaterThan(20);
+  const pool = defaultPack.animals.taunts;
+
+  it('default pack pool is non-empty', () => {
+    expect(pool.length).toBeGreaterThan(20);
   });
 
-  it('pickAnimalTaunt is deterministic with fixed rng', () => {
-    expect(pickAnimalTaunt(() => 0)).toBe(ANIMAL_TAUNTS[0]);
-    expect(pickAnimalTaunt(() => 0.999)).toBe(ANIMAL_TAUNTS[ANIMAL_TAUNTS.length - 1]);
+  it('pickFromPool is deterministic with fixed rng', () => {
+    expect(pickFromPool(pool, () => 0)).toBe(pool[0]);
+    expect(pickFromPool(pool, () => 0.999)).toBe(pool[pool.length - 1]);
   });
 });

@@ -1,4 +1,4 @@
-import { GameConfig as C } from './GameConfig';
+import { getRuntimeConfig } from './RuntimeConfig';
 
 export type AnimalKind = 'bird' | 'cat' | 'dog' | 'rabbit';
 export type AnimalPhase = 'fadeIn' | 'dive' | 'kick' | 'knock' | 'hit' | 'gone';
@@ -33,6 +33,7 @@ export interface HazardInput {
 type Handler = (a: Animal) => void;
 
 export function animalTier(coins: number): 0 | 1 | 2 | 3 {
+  const C = getRuntimeConfig();
   if (coins >= C.ANIMAL_TIER3_COINS) return 3;
   if (coins >= C.ANIMAL_TIER2_COINS) return 2;
   if (coins >= C.ANIMAL_TIER1_COINS) return 1;
@@ -47,12 +48,14 @@ export function kindsForTier(tier: 0 | 1 | 2 | 3): AnimalKind[] {
 }
 
 export function maxAliveForTier(tier: 0 | 1 | 2 | 3): number {
+  const C = getRuntimeConfig();
   if (tier <= 0) return 0;
   if (tier >= 3) return C.ANIMAL_MAX_ALIVE_T3;
   return C.ANIMAL_MAX_ALIVE_T1_T2;
 }
 
 function gapRange(tier: 1 | 2 | 3): [number, number] {
+  const C = getRuntimeConfig();
   if (tier === 1) return [C.ANIMAL_SPAWN_GAP_T1_MIN, C.ANIMAL_SPAWN_GAP_T1_MAX];
   if (tier === 2) return [C.ANIMAL_SPAWN_GAP_T2_MIN, C.ANIMAL_SPAWN_GAP_T2_MAX];
   return [C.ANIMAL_SPAWN_GAP_T3_MIN, C.ANIMAL_SPAWN_GAP_T3_MAX];
@@ -89,6 +92,7 @@ export class AnimalHazard {
   }
 
   private trySpawn(inp: HazardInput): void {
+    const C = getRuntimeConfig();
     const tier = animalTier(inp.coins);
     if (tier === 0) return;
     if (!inp.started || inp.stunned) return;
@@ -131,6 +135,7 @@ export class AnimalHazard {
   }
 
   private canKnock(a: Animal, inp: HazardInput): boolean {
+    const C = getRuntimeConfig();
     if (a.phase !== 'fadeIn' && a.phase !== 'dive') return false;
     if (this.dist(a.xPx, a.yPx, inp.tipX, inp.tipY) > C.ANIMAL_KNOCK_RADIUS_PX) return false;
     if (Math.abs(inp.bendOffset) < C.ANIMAL_KNOCK_BEND_MIN_PX) return false;
@@ -139,11 +144,13 @@ export class AnimalHazard {
   }
 
   private canHit(a: Animal, inp: HazardInput): boolean {
+    const C = getRuntimeConfig();
     if (a.phase !== 'fadeIn' && a.phase !== 'dive') return false;
     return this.dist(a.xPx, a.yPx, inp.pandaX, inp.pandaY) <= C.ANIMAL_HIT_RADIUS_PX;
   }
 
   private integrate(a: Animal, inp: HazardInput): void {
+    const C = getRuntimeConfig();
     if (inp.stunned) return;
     a.age += inp.dt;
     if (a.phase === 'fadeIn') {
@@ -167,6 +174,7 @@ export class AnimalHazard {
   }
 
   update(inp: HazardInput): void {
+    const C = getRuntimeConfig();
     this.trySpawn(inp);
     let hitThisFrame = false;
     for (const a of this.animals) {

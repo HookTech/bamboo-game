@@ -29,7 +29,7 @@
 bamboo-game/
 ├── cocos/                 # 主工程（Cocos Creator 3.8.8）
 │   ├── assets/
-│   │   ├── scripts/       # Bootstrap / core / view / fx / ui / platform
+│   │   ├── scripts/       # app / content / character / core / view / fx / ui / platform
 │   │   ├── models/        # GLB（models Asset Bundle）
 │   │   └── resources/     # effect 等
 │   ├── tests/             # Jest 单测（纯逻辑，不依赖引擎）
@@ -53,6 +53,8 @@ bamboo-game/
 1. 用 Cocos Creator **3.8.8** 打开 `cocos/` 目录  
 2. 打开场景 `assets/main.scene`（场景中挂有 `Bootstrap`）  
 3. 点击预览；空格开始游戏  
+
+切换场景内容包（无 UI）：改 `cocos/assets/scripts/app/ActiveScene.ts` 中 `ACTIVE_SCENE_ID` 为 `'default' | 'work' | 'cny'`。
 
 首次打开若 IDE 报找不到 `cc` 模块，等编辑器生成 `cocos/temp/tsconfig.cocos.json` 后会消失（`tsconfig.json` 已 extends 该文件）。
 

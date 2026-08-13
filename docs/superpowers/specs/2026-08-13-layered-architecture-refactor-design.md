@@ -2,7 +2,7 @@
 
 日期: 2026-08-13  
 分支: `feature/layered-architecture-refactor`  
-状态: 已确认（方案 B）
+状态: 已实现
 
 关联:
 
@@ -188,8 +188,8 @@ PandaView 应用：SkeletalAnimation clip + 根节点晃动/位移
 
 ## 成功标准
 
-- [ ] 目录与职责符合上文；`Bootstrap` 不再承载主循环业务接线。
-- [ ] `ACTIVE_SCENE_ID` 可切 default/work/cny；未知 id 回退。
-- [ ] default 下 kick / 眩晕 / 拾币 / 弯竹与重构前一致。
-- [ ] `AnimController` 与 Pack 合并逻辑有 Jest 覆盖。
-- [ ] `npm test` 全绿。
+- [x] 目录与职责符合上文；`Bootstrap` 不再承载主循环业务接线。
+- [x] `ACTIVE_SCENE_ID` 可切 default/work/cny；未知 id 回退。
+- [x] default 下 kick / 眩晕 / 拾币 / 弯竹与重构前一致。
+- [x] `AnimController` 与 Pack 合并逻辑有 Jest 覆盖。
+- [x] `npm test` 全绿。

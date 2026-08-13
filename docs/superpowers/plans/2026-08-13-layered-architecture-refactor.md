@@ -735,13 +735,13 @@ EOF
 - Modify: `docs/superpowers/specs/2026-08-13-layered-architecture-refactor-design.md`（状态 → 已实现）
 - Modify: `README.md`（仓库结构补 `app/` `content/` `character/`；说明 `ACTIVE_SCENE_ID`）
 
-- [ ] **Step 1: 更新 README 结构说明与切换场景一行指引**
+- [x] **Step 1: 更新 README 结构说明与切换场景一行指引**
 
 ```md
 # 切换场景内容包（无 UI）：改 cocos/assets/scripts/app/ActiveScene.ts 中 ACTIVE_SCENE_ID
 ```
 
-- [ ] **Step 2: spec 状态改为已实现，勾成功标准**
+- [x] **Step 2: spec 状态改为已实现，勾成功标准**
 
 - [ ] **Step 3: 全量测试**
 

@@ -5,6 +5,7 @@ import {
 import { GameConfig as C } from '../core/GameConfig';
 import { GameState } from '../core/GameState';
 import { ScoreSystem } from '../core/ScoreSystem';
+import type { CopyTheme } from '../content/ScenePack';
 
 const { ccclass } = _decorator;
 
@@ -27,6 +28,7 @@ export class HUD extends Component {
   private bar!: Graphics;
   private floats: FloatLabel[] = [];
   private followBanters = new Map<number, FollowBanter>();
+  private copy: CopyTheme | null = null;
 
   private uiW = C.DESIGN_W;
   private lastUiW = -1;
@@ -65,12 +67,16 @@ export class HUD extends Component {
   }
 
   /** 在 Canvas 节点上构建(中心原点)；宽随 FIXED_HEIGHT 可见区变化。 */
-  build(): void {
+  build(copy?: CopyTheme): void {
+    this.copy = copy ?? null;
     this.node.layer = Layers.Enum.UI_2D;
     const ut = this.node.getComponent(UITransform) ?? this.node.addComponent(UITransform);
     ut.setContentSize(C.DESIGN_W, C.DESIGN_H);
 
     const white = new Color(255, 255, 255, 242);
+    const title = this.copy?.title ?? '势如破竹';
+    const overlay = this.copy?.overlay ?? '点屏幕开始 · 点哪边竹往哪边弯';
+    const hint = this.copy?.hint ?? '节奏点按 0.1~0.5秒/次 · 侧点弯竹 · 太急眩晕 · 空格只生长';
 
     // 先按设计宽创建,随后 syncLayout 按可见宽重排+缩字
     this.lCoins = this.makeLabel('金币 0', 22, 0, 268, white, 'left');
@@ -79,9 +85,9 @@ export class HUD extends Component {
     this.lBest = this.makeLabel('最高 0.0m', 15, 0, 184, new Color(255, 255, 255, 166), 'left');
     this.lCombo = this.makeLabel('', 16, 0, 244, white, 'right');
     this.lDizzy = this.makeLabel('', 20, 0, 244, new Color(255, 120, 120, 230), 'center');
-    this.lTitle = this.makeLabel('势如破竹', 44, 0, 48, white, 'center');
-    this.lOverlay = this.makeLabel('点屏幕开始 · 点哪边竹往哪边弯', 22, 0, -12, white, 'center');
-    this.lHint = this.makeLabel('节奏点按 0.1~0.5秒/次 · 侧点弯竹 · 太急眩晕 · 空格只生长', 14, 0, -278, white, 'center');
+    this.lTitle = this.makeLabel(title, 44, 0, 48, white, 'center');
+    this.lOverlay = this.makeLabel(overlay, 22, 0, -12, white, 'center');
+    this.lHint = this.makeLabel(hint, 14, 0, -278, white, 'center');
 
     const barNode = new Node('ComboBar');
     barNode.layer = Layers.Enum.UI_2D;
@@ -143,9 +149,9 @@ export class HUD extends Component {
     if (!state.stunned) {
       this.lDizzy.string = '';
     } else if (state.stunReason === 'animal') {
-      this.lDizzy.string = '啊';
+      this.lDizzy.string = this.copy?.stunAnimal ?? '啊';
     } else {
-      this.lDizzy.string = '别卷了，钱赚不完的';
+      this.lDizzy.string = this.copy?.stunMash ?? '别卷了，钱赚不完的';
     }
 
     this.bar.clear();

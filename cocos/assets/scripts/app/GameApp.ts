@@ -14,17 +14,16 @@ import { SkyView } from '../view/SkyView';
 import { HUD } from '../ui/HUD';
 import { AudioFx } from '../fx/AudioFx';
 import { ParticleFx } from '../fx/ParticleFx';
-import { GameConfig as C, px2m } from '../core/GameConfig';
+import { GameConfig, GameConfig as C, px2m } from '../core/GameConfig';
 import { BendController } from '../core/BendController';
 import { totalSwayMaxPx } from '../core/layoutMath';
 import { AnimalHazard } from '../core/AnimalHazard';
 import { pickFromPool } from '../core/AnimalTaunts';
 import { resolveScenePack } from './ActiveScene';
+import { mergeRuntimeConfig } from '../core/mergeRuntimeConfig';
+import { setRuntimeConfig, getRuntimeConfig } from '../core/RuntimeConfig';
+import type { ScenePack } from '../content/ScenePack';
 import { AnimalView } from '../view/AnimalView';
-
-/** Kenney 植被 Prefab UUID(meta),预览比 bundle 路径更稳 */
-const TREE_PREFAB_UUID = '5d39d5d5-0cd9-4c57-be37-b943946e6492@f7340';
-const GRASS_PREFAB_UUID = '37d1b96d-7347-4bb7-9ba5-7ad22b2baca4@0a8bf';
 
 /** 运行时构建全部节点 —— Bootstrap 只负责 preload effect 后交给本类。 */
 export class GameApp {
@@ -39,6 +38,7 @@ export class GameApp {
   private bend = new BendController();
   private hazard = new AnimalHazard();
   private animals!: AnimalView;
+  private pack!: ScenePack;
   /** resources.loadDir 异步完成前 update 会先跑,未就绪时跳过。 */
   private ready = false;
   private lastBestCheck = 0;
@@ -46,6 +46,10 @@ export class GameApp {
   constructor(private host: Component) {}
 
   start(effect: EffectAsset | null): void {
+    const pack = resolveScenePack();
+    this.pack = pack;
+    setRuntimeConfig(mergeRuntimeConfig(GameConfig, pack.config));
+
     view.setDesignResolutionSize(800, 600, ResolutionPolicy.FIXED_HEIGHT);
 
     const lightNode = new Node('Sun');
@@ -127,7 +131,7 @@ export class GameApp {
     canvas.cameraComponent = uiCam;
     canvas.alignCanvasWithScreen = true;
     this.hud = canvasNode.addComponent(HUD);
-    this.hud.build();
+    this.hud.build(this.pack.copy);
     this.hud.refresh(this.state, this.score);
 
     const animalNode = new Node('Animals');
@@ -144,7 +148,7 @@ export class GameApp {
       this.hud.endFollowBanter(a.id);
     });
     this.hazard.on('taunt', (a) => {
-      const taunt = pickFromPool(resolveScenePack().animals.taunts);
+      const taunt = pickFromPool(this.pack.animals.taunts);
       console.log(`[animal] taunt kind=${a.kind} text=${taunt}`);
       this.hud.startFollowBanter(a.id, taunt);
     });
@@ -153,7 +157,7 @@ export class GameApp {
     });
     this.hazard.on('hit', (a) => {
       this.state.applyExternalStun();
-      const lost = this.score.loseCoins(C.ANIMAL_COIN_LOSS);
+      const lost = this.score.loseCoins(getRuntimeConfig().ANIMAL_COIN_LOSS);
       console.log(`[animal] hit kind=${a.kind} lost=${lost} coins=${this.score.coins}`);
       this.audioFx.coinDrop();
       const p = this.panda.charPx;
@@ -226,7 +230,9 @@ export class GameApp {
       console.log('[Bootstrap] grass ready: 8');
     };
 
-    assetManager.loadAny({ uuid: TREE_PREFAB_UUID }, (err, asset) => {
+    const { treePrefabUuid, grassPrefabUuid, treeBundleKey, grassBundleKey } = this.pack.ground;
+
+    assetManager.loadAny({ uuid: treePrefabUuid }, (err, asset) => {
       if (!this.host.isValid) return;
       if (!err && asset instanceof Prefab) {
         placeTrees(asset);
@@ -234,13 +240,13 @@ export class GameApp {
       }
       assetManager.loadBundle('models', (e2, bundle) => {
         if (!this.host.isValid || e2 || !bundle) return;
-        bundle.load('tree_a', Prefab, (e3, prefab) => {
+        bundle.load(treeBundleKey, Prefab, (e3, prefab) => {
           if (!e3 && prefab) placeTrees(prefab);
         });
       });
     });
 
-    assetManager.loadAny({ uuid: GRASS_PREFAB_UUID }, (err, asset) => {
+    assetManager.loadAny({ uuid: grassPrefabUuid }, (err, asset) => {
       if (!this.host.isValid) return;
       if (!err && asset instanceof Prefab) {
         placeGrass(asset);
@@ -248,7 +254,7 @@ export class GameApp {
       }
       assetManager.loadBundle('models', (e2, bundle) => {
         if (!this.host.isValid || e2 || !bundle) return;
-        bundle.load('grass_a', Prefab, (e3, prefab) => {
+        bundle.load(grassBundleKey, Prefab, (e3, prefab) => {
           if (!e3 && prefab) placeGrass(prefab);
         });
       });

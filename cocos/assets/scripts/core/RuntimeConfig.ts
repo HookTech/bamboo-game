@@ -4,11 +4,11 @@ import type { RuntimeConfigShape } from './mergeRuntimeConfig';
 let current: RuntimeConfigShape = { ...GameConfig };
 
 export function setRuntimeConfig(next: RuntimeConfigShape): void {
-  current = next;
+  current = { ...next };
 }
 
-export function getRuntimeConfig(): RuntimeConfigShape {
-  return current;
+export function getRuntimeConfig(): Readonly<RuntimeConfigShape> {
+  return { ...current };
 }
 
 /** 测试用：恢复默认 */
